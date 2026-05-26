@@ -337,30 +337,27 @@
     
     // Optional: Load available months when station changes
     stationSelect.addEventListener('change', async () => {
-        const station = stationSelect.value;
-        if (!station) return;
-        
-        try {
-            const response = await fetch(`${WORKER_URL}/api/get-months?station=${station}`);
-            if (response.ok) {
-                const result = await response.json();
-                if (result.months && result.months.length > 0) {
-                    console.log(`Available months for ${station}:`, result.months);
-                    const latestMonth = result.months[0];
-                    // Suggest the latest month to user (optional)
-                    if (latestMonth) {
-                        const year = latestMonth.substring(0, 4);
-                        const month = latestMonth.substring(4, 6);
-                        const suggestedDate = `${year}-${month}-01`;
-                        dateSelect.value = suggestedDate;
-                        showStatus(`📁 Latest data available: ${year}/${month}`, 'info');
-                    }
+    const station = stationSelect.value;
+    if (!station) return;
+    
+    try {
+        const response = await fetch(`${WORKER_URL}/api/get-months?station=${station}`);
+        if (response.ok) {
+            const result = await response.json();
+            if (result.months && result.months.length > 0) {
+                const latestMonth = result.months[0];
+                if (latestMonth && latestMonth.length === 6) {
+                    const year = latestMonth.substring(0, 4);
+                    const month = latestMonth.substring(4, 6);
+                    // Don't auto-set date, just show info
+                    showStatus(`📁 Latest data available: ${year}-${month}`, 'info');
                 }
             }
-        } catch (error) {
-            console.error('Failed to fetch months:', error);
         }
-    });
+    } catch (error) {
+        console.error('Failed to fetch months:', error);
+    }
+});
 </script>
 </body>
 </html>
