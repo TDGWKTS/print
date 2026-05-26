@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Inspection Records</title>
+    <title>Print Inspection Records - WKTS</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -14,7 +14,7 @@
         }
         
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
         }
         
@@ -62,7 +62,6 @@
         button {
             width: 100%;
             padding: 14px;
-            background: #059669;
             color: white;
             border: none;
             border-radius: 12px;
@@ -73,13 +72,33 @@
             margin-top: 8px;
         }
         
-        button:hover {
-            background: #047857;
-        }
-        
         button:disabled {
             background: #9ca3af;
             cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: #059669;
+        }
+        
+        .btn-primary:hover {
+            background: #047857;
+        }
+        
+        .btn-secondary {
+            background: #4F46E5;
+        }
+        
+        .btn-secondary:hover {
+            background: #4338CA;
+        }
+        
+        .btn-outline {
+            background: #6B7280;
+        }
+        
+        .btn-outline:hover {
+            background: #4B5563;
         }
         
         .status {
@@ -205,12 +224,23 @@
             font-family: monospace;
             overflow-x: auto;
             display: none;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
         }
         
         .data-preview.show {
             display: block;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .button-group button {
+            flex: 1;
+            margin-top: 0;
         }
     </style>
 </head>
@@ -218,19 +248,12 @@
 <div class="container">
     <div class="card">
         <h1>📄 Print Inspection Records</h1>
-        <div class="subtitle">Download data, then copy into your Excel template</div>
+        <div class="subtitle">West Kowloon Transfer Station (WKTS)</div>
         
         <div class="form-group">
             <label>📍 Station</label>
             <select id="stationSelect">
-                <option value="">Select station...</option>
                 <option value="wkts">WKTS (West Kowloon Transfer Station)</option>
-                <option value="nwnt">NWNT</option>
-                <option value="iets">IETS</option>
-                <option value="iwts">IWTS</option>
-                <option value="stts">STTS</option>
-                <option value="oitf">OITF</option>
-                <option value="nlts">NLTS</option>
             </select>
         </div>
         
@@ -239,31 +262,55 @@
             <input type="date" id="dateSelect">
         </div>
         
-        <button id="downloadBtn">📥 Step 1: Download Excel Data</button>
+        <div class="button-group">
+            <button id="downloadTemplateBtn" class="btn-outline">📁 Download Excel Template</button>
+            <button id="downloadDataBtn" class="btn-primary">📥 Download Inspection Data</button>
+        </div>
         
         <div id="status" class="status"></div>
         <div id="dataPreview" class="data-preview"></div>
         
         <div id="instructions" class="instructions">
             <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-text">
+                    <div class="step-title">Download Template (First Time Only)</div>
+                    Click <strong>Download Excel Template</strong> to get the master template with all formatting and formulas.
+                </div>
+            </div>
+            <div class="step">
                 <div class="step-number">2</div>
                 <div class="step-text">
-                    <div class="step-title">Open and Copy the Downloaded Excel Data</div>
-                    Open the downloaded Excel file, select all data cells (A2 to end), and press <strong>Ctrl+C</strong> to copy.
+                    <div class="step-title">Download Inspection Data</div>
+                    Click <strong>Download Inspection Data</strong> to get the inspection records for the selected date.
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">3</div>
                 <div class="step-text">
-                    <div class="step-title">Paste to Print Worksheet Row 6</div>
-                    Open your master Excel template, go to the <strong>Print</strong> worksheet, select cell <strong>A6</strong>, and press <strong>Ctrl+V</strong> to paste.
+                    <div class="step-title">Open Both Excel Files</div>
+                    Open the <strong>Template</strong> file and the <strong>Inspection Data</strong> file side by side.
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-text">
+                    <div class="step-title">Copy Data</div>
+                    In the Inspection Data file, select all data cells (A2 to last row/column), press <strong>Ctrl+C</strong>.
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-text">
+                    <div class="step-title">Paste to Print Worksheet</div>
+                    In the Template file, go to the <strong>Print</strong> worksheet, select cell <strong>A6</strong>, press <strong>Ctrl+V</strong>.
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">✓</div>
                 <div class="step-text">
                     <div class="step-title">Print</div>
-                    Your data is now in the Print sheet. Review and print as usual.
+                    Your data is now in the Print sheet. All formulas will auto-calculate. Review and print.
                 </div>
             </div>
         </div>
@@ -281,10 +328,12 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script>
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
+    const STATION_ID = 'wkts';
     
     const stationSelect = document.getElementById('stationSelect');
     const dateSelect = document.getElementById('dateSelect');
-    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+    const downloadDataBtn = document.getElementById('downloadDataBtn');
     const statusDiv = document.getElementById('status');
     const dataPreviewDiv = document.getElementById('dataPreview');
     const instructionsDiv = document.getElementById('instructions');
@@ -303,27 +352,55 @@
         }, 8000);
     }
     
+    // Download Template from R2
+    async function downloadTemplate() {
+        downloadTemplateBtn.disabled = true;
+        downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading template...';
+        
+        try {
+            const response = await fetch(`${WORKER_URL}/api/get-template?station=${STATION_ID}`);
+            
+            if (!response.ok) {
+                throw new Error('Template not found in R2');
+            }
+            
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `WKTS_Master_Template.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus('✅ Template downloaded successfully!', 'success');
+            instructionsDiv.classList.add('show');
+            
+        } catch (error) {
+            showStatus(`❌ Error: ${error.message}`, 'error');
+        } finally {
+            downloadTemplateBtn.disabled = false;
+            downloadTemplateBtn.innerHTML = '📁 Download Excel Template';
+        }
+    }
+    
+    // Download Inspection Data as Excel (Complete Headers)
     async function downloadData() {
         const station = stationSelect.value;
         const date = dateSelect.value;
-        
-        if (!station) {
-            showStatus('Please select a station', 'error');
-            return;
-        }
         
         if (!date) {
             showStatus('Please select a date', 'error');
             return;
         }
         
-        downloadBtn.disabled = true;
-        downloadBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data...';
+        downloadDataBtn.disabled = true;
+        downloadDataBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data...';
         dataPreviewDiv.classList.remove('show');
-        instructionsDiv.classList.remove('show');
         
         try {
-            // First get CSV data from Worker
+            // Get CSV data from Worker
             const response = await fetch(`${WORKER_URL}/api/get-data-csv`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -341,21 +418,64 @@
             
             const csvData = await response.text();
             
-            // Convert CSV to Excel workbook
+            // Parse CSV
             const lines = csvData.trim().split('\n');
             const headers = parseCSVRow(lines[0]);
             const dataRows = lines.slice(1);
             
-            // Create workbook with a single sheet
+            // Create workbook with complete data
             const workbook = XLSX.utils.book_new();
-            const worksheetData = [headers];
+            
+            // Build complete worksheet data with ALL headers (154 columns)
+            // These match your Print sheet exactly
+            const fullHeaders = [
+                'Date', 'Inspected By', 'Time', 'Weather', 'WB No.1', 'WB No.2', 'WB No.3', 'WB No.4',
+                'CCTV/ Recording System', 'Weight Display correctness', 'Vehicle No.', 'Type/ Origin',
+                'Permitted waste?', 'Any off-site queuing?', 'Inspected by EPD', 'Inspected by CHEC',
+                'Vehicle No.', 'Waste Type', 'Permitted Waste', 'Traffic control signal', 'CCTV system',
+                'Filter Press', 'C1', 'C1', 'C2', 'C2', 'MF1', 'C3', 'C3', 'MF2', 'C4', 'C4', 'MF3',
+                'C5', 'C5', 'MF4', 'C6', 'C6', 'MF5', 'C7', 'C7', 'MF6', 'C8', 'C8', 'C9', 'C9', 'C10', 'C10',
+                'Screen 1', 'Screen 2', 'Screen 3', '1A', '1B', '2A', '2B', 'DAF 1', 'DAF 2', 'Area Cleaned',
+                'Crane 1', 'Crane 2', 'CHU 1', 'CHU 2', '145B', '55FV', '155WD', 'Others', 'Lai Wan', 'Ngon Shuen',
+                'Vehicle Wash 1', 'Vehicle Wash 2', 'Vehicle Wash 3', 'VW Clean ?', 'Waste clearance > 30 mins?',
+                'Off-site litter > 24 hrs?', 'Air Curtain', 'Scrubber 1', 'Scrubber 2', 'Scrubber 3', 'Scrubber 4',
+                'Scrubber 5', 'Acid Scrubber 1', 'Acid Scrubber 2', 'Acid Scrubber 4', 'Acid Scrubber 5',
+                'Alk Scrubber 1', 'Alk Scrubber 2', 'Alk Scrubber 3', 'Alk Scrubber 4', 'Alk Scrubber 5',
+                'ORP 1', 'ORP 2', 'ORP 3', 'ORP 4', 'ORP 5', 'Before Treatment', 'Anaerobic Tanks',
+                'Aerobic Tank T300', 'Aerobic Tank T401', 'Aerobic Tank T402', 'Aerobic Tank T403', 'Aerobic Tank T404',
+                'Final Clarifer', 'Filter Press', 'Bigas Tank', 'Penstock', 'Remarks1', 'Remarks2', 'Remarks3', 'Remarks 4',
+                'PLC', 'Pre-Treat', 'Penstock', 'Status', 'T-401', 'T-402', 'T-403', 'T-404', 'Status', 'pH', 'Temp', 'DO',
+                'Biogas Level', 'Status', 'Centrifuge', 'Wetsep', 'Marine Vessel', 'Storm water', 'VWF wastewater',
+                'Rundown Screen', 'FIQT -101', 'FIQT -100', 'FIT-313', 'FIT-312', 'T410', 'FIT-413', 'Public', 'Road Wash',
+                'Marine', 'Scrubbers', 'VWS', 'DO T-401', 'DO T-402', 'DO T-403', 'DO T-404', 'Temp T-401', 'Temp T-402',
+                'Temp T-403', 'Temp T-404', 'pH T-404', 'Number of Containers Completed', 'Wheelstopper Conditions',
+                'Wheelstopper Conditions (Remarks)', 'DG Storage', 'Compactor 6A'
+            ];
+            
+            // Map CSV headers to full headers (CSV has first 21 columns, rest empty)
+            const worksheetData = [fullHeaders];
             
             for (const row of dataRows) {
-                worksheetData.push(parseCSVRow(row));
+                const parsedRow = parseCSVRow(row);
+                const fullRow = [];
+                
+                // Fill first 21 columns from CSV data
+                for (let i = 0; i < 21; i++) {
+                    fullRow[i] = parsedRow[i] || '';
+                }
+                // Fill remaining columns as empty
+                for (let i = 21; i < fullHeaders.length; i++) {
+                    fullRow[i] = '';
+                }
+                worksheetData.push(fullRow);
             }
             
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
+            
+            // Auto-size columns (basic)
+            worksheet['!cols'] = fullHeaders.map(() => ({ wch: 15 }));
+            
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Data');
             
             // Generate Excel file
             const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
@@ -376,7 +496,8 @@
                 <code>${previewLines.join('<br>')}</code><br>
                 ${lines.length > 6 ? '<span style="color:#666;">... and more rows</span>' : ''}
                 <hr>
-                <strong>Total records: ${lines.length - 1}</strong>
+                <strong>Total records: ${lines.length - 1}</strong><br>
+                <strong>Total columns: ${fullHeaders.length}</strong> (matches Print sheet)
             `;
             dataPreviewDiv.classList.add('show');
             
@@ -386,8 +507,8 @@
         } catch (error) {
             showStatus(`❌ Error: ${error.message}`, 'error');
         } finally {
-            downloadBtn.disabled = false;
-            downloadBtn.innerHTML = '📥 Step 1: Download Excel Data';
+            downloadDataBtn.disabled = false;
+            downloadDataBtn.innerHTML = '📥 Download Inspection Data';
         }
     }
     
@@ -413,7 +534,13 @@
         return result.map(cell => cell.replace(/^"|"$/g, ''));
     }
     
-    downloadBtn.addEventListener('click', downloadData);
+    downloadTemplateBtn.addEventListener('click', downloadTemplate);
+    downloadDataBtn.addEventListener('click', downloadData);
+    
+    // Show instructions on page load
+    setTimeout(() => {
+        instructionsDiv.classList.add('show');
+    }, 500);
 </script>
 </body>
 </html>
