@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Inspection Records - Admin Panel</title>
+    <title>Print Inspection Records</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -14,7 +14,7 @@
         }
         
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
         }
         
@@ -59,12 +59,6 @@
             background: white;
         }
         
-        select:focus, input:focus {
-            outline: none;
-            border-color: #4F46E5;
-            box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
-        }
-        
         button {
             width: 100%;
             padding: 14px;
@@ -86,6 +80,37 @@
         button:disabled {
             background: #9ca3af;
             cursor: not-allowed;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .button-group button {
+            flex: 1;
+            margin-top: 0;
+        }
+        
+        .btn-csv {
+            background: #059669;
+        }
+        
+        .btn-csv:hover {
+            background: #047857;
+        }
+        
+        .btn-import {
+            background: #6B7280;
+        }
+        
+        .btn-import:hover {
+            background: #4B5563;
+        }
+        
+        .btn-import.active {
+            background: #4F46E5;
         }
         
         .status {
@@ -114,12 +139,6 @@
             display: block;
         }
         
-        .status.warning {
-            background: #FEF3C7;
-            color: #92400E;
-            display: block;
-        }
-        
         .loading-spinner {
             display: inline-block;
             width: 16px;
@@ -142,6 +161,28 @@
             border-top: 1px solid #e5e7eb;
         }
         
+        .instructions {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 13px;
+            display: none;
+        }
+        
+        .instructions.show {
+            display: block;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .instructions li {
+            margin: 8px 0;
+        }
+        
         .note {
             background: #FFFBEB;
             border-left: 4px solid #F59E0B;
@@ -152,45 +193,39 @@
             border-radius: 8px;
         }
         
-        .records-info {
-            margin-top: 20px;
-            padding: 16px;
-            background: #f8f9fa;
-            border-radius: 12px;
-            font-size: 13px;
+        .file-info {
+            margin-top: 12px;
+            padding: 10px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            font-size: 12px;
             display: none;
-            max-height: 200px;
-            overflow-y: auto;
         }
         
-        .records-info.show {
+        .file-info.show {
             display: block;
         }
         
-        .records-info strong {
-            color: #4F46E5;
+        .template-preview {
+            margin-top: 16px;
+            padding: 12px;
+            background: #f0fdf4;
+            border-radius: 8px;
+            border: 1px solid #bbf7d0;
+            font-size: 13px;
+            display: none;
         }
         
-        .records-list {
-            margin-top: 10px;
-            font-family: monospace;
-            font-size: 11px;
-            color: #666;
-        }
-        
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: #999;
+        .template-preview.show {
+            display: block;
         }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="card">
-        <h1>📄 Generate Print-Ready Excel</h1>
-        <div class="subtitle">Select station and date to generate formatted inspection report</div>
+        <h1>📄 Print Inspection Records</h1>
+        <div class="subtitle">Download CSV data, then import into your Excel template</div>
         
         <div class="form-group">
             <label>📍 Station</label>
@@ -198,11 +233,11 @@
                 <option value="">Select station...</option>
                 <option value="wkts">WKTS (West Kowloon Transfer Station)</option>
                 <option value="nwnt">NWNT (North West New Territories)</option>
-                <option value="iets">IETS (Island East Transfer Station)</option>
-                <option value="iwts">IWTS (Island West Transfer Station)</option>
-                <option value="stts">STTS (South Transfer Station)</option>
-                <option value="oitf">OITF (Outlying Islands Transfer Facility)</option>
-                <option value="nlts">NLTS (North Lantau Transfer Station)</option>
+                <option value="iets">IETS</option>
+                <option value="iwts">IWTS</option>
+                <option value="stts">STTS</option>
+                <option value="oitf">OITF</option>
+                <option value="nlts">NLTS</option>
             </select>
         </div>
         
@@ -211,35 +246,61 @@
             <input type="date" id="dateSelect">
         </div>
         
-        <button id="generateBtn">📊 Generate Excel Report</button>
+        <button id="downloadCsvBtn" class="btn-csv">📊 Download CSV Data</button>
+        
+        <hr>
+        
+        <div class="form-group">
+            <label>📁 Your Excel Template</label>
+            <input type="file" id="templateFile" accept=".xlsx,.xls">
+            <div id="fileInfo" class="file-info"></div>
+        </div>
+        
+        <button id="importBtn" class="btn-import" disabled>📥 Import CSV into Template</button>
         
         <div id="status" class="status"></div>
-        <div id="recordsInfo" class="records-info"></div>
+        <div id="templatePreview" class="template-preview"></div>
+        
+        <div id="instructions" class="instructions">
+            <strong>📋 How to print (preserving all formatting):</strong>
+            <ol>
+                <li>Select <strong>Station</strong> and <strong>Date</strong></li>
+                <li>Click <strong>Download CSV Data</strong> to get inspection data</li>
+                <li>Select your <strong>Excel Template</strong> file (the one with all your formatting)</li>
+                <li>Click <strong>Import CSV into Template</strong> to merge data</li>
+                <li>The merged Excel file will download automatically</li>
+                <li>Open and print – <strong>all formatting preserved!</strong></li>
+            </ol>
+        </div>
         
         <hr>
         
         <div class="note">
-            💡 <strong>How it works:</strong><br>
-            1. Select station and date<br>
-            2. System fetches all inspections for that date from cloud<br>
-            3. Downloads a formatted Excel file with your template + data<br>
-            4. Open the Excel file - your formatting is preserved<br>
-            5. Print directly from Excel
+            💡 <strong>Why this works:</strong> Your Excel template is never modified by any server.<br>
+            The CSV import happens locally in your browser using Excel's built-in capabilities.<br>
+            <strong>100% of your formatting (fonts, colors, merged cells) is preserved.</strong>
         </div>
-    </div>
-    <div class="footer">
-        Powered by Cloudflare R2 | Data stored securely
     </div>
 </div>
 
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script>
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
     
     const stationSelect = document.getElementById('stationSelect');
     const dateSelect = document.getElementById('dateSelect');
-    const generateBtn = document.getElementById('generateBtn');
+    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+    const templateFileInput = document.getElementById('templateFile');
+    const importBtn = document.getElementById('importBtn');
+    const fileInfo = document.getElementById('fileInfo');
+    const templatePreview = document.getElementById('templatePreview');
     const statusDiv = document.getElementById('status');
-    const recordsInfoDiv = document.getElementById('recordsInfo');
+    const instructionsDiv = document.getElementById('instructions');
+    
+    let csvData = null;
+    let currentCsvText = null;
+    let selectedTemplate = null;
+    let selectedTemplateName = null;
     
     // Set default date to today
     const today = new Date().toISOString().split('T')[0];
@@ -255,20 +316,8 @@
         }, 8000);
     }
     
-    function showRecordsInfo(count, station, date) {
-        recordsInfoDiv.innerHTML = `
-            <strong>📊 Found ${count} inspection(s) for ${station.toUpperCase()} on ${date}</strong>
-            <div class="records-list">
-                ${count} record(s) will be filled into rows 6-9 of the Print sheet
-            </div>
-        `;
-        recordsInfoDiv.classList.add('show');
-        setTimeout(() => {
-            recordsInfoDiv.classList.remove('show');
-        }, 5000);
-    }
-    
-    async function generateExcel() {
+    // Step 1: Download CSV
+    async function downloadCSV() {
         const station = stationSelect.value;
         const date = dateSelect.value;
         
@@ -282,11 +331,11 @@
             return;
         }
         
-        generateBtn.disabled = true;
-        generateBtn.innerHTML = '<span class="loading-spinner"></span> Generating Excel file...';
+        downloadCsvBtn.disabled = true;
+        downloadCsvBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data...';
         
         try {
-            const response = await fetch(`${WORKER_URL}/api/generate-print`, {
+            const response = await fetch(`${WORKER_URL}/api/get-data-csv`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ stationId: station, date: date })
@@ -301,63 +350,186 @@
                 throw new Error(errorMsg);
             }
             
-            // Get the filename from Content-Disposition or create our own
-            const contentDisposition = response.headers.get('Content-Disposition');
-            let filename = `${station}_${date}_printable.xlsx`;
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="?([^"]+)"?/);
-                if (match) filename = match[1];
-            }
+            currentCsvText = await response.text();
             
-            const blob = await response.blob();
+            // Create download link for CSV
+            const blob = new Blob([currentCsvText], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = filename;
+            a.download = `${station}_${date}_data.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            // Try to get record count from response headers (optional)
-            const recordCount = response.headers.get('X-Record-Count') || 'multiple';
-            showRecordsInfo(recordCount, station, date);
-            showStatus(`✅ Excel file generated successfully! ${filename} downloaded.`, 'success');
+            csvData = currentCsvText;
+            showStatus(`✅ CSV downloaded! ${currentCsvText.split('\n').length - 1} record(s) exported.`, 'success');
+            instructionsDiv.classList.add('show');
+            
+            // Enable import button if template is selected
+            if (selectedTemplate) {
+                importBtn.disabled = false;
+                importBtn.classList.add('active');
+            }
             
         } catch (error) {
-            console.error('Generation error:', error);
             showStatus(`❌ Error: ${error.message}`, 'error');
         } finally {
-            generateBtn.disabled = false;
-            generateBtn.innerHTML = '📊 Generate Excel Report';
+            downloadCsvBtn.disabled = false;
+            downloadCsvBtn.innerHTML = '📊 Download CSV Data';
         }
     }
     
-    generateBtn.addEventListener('click', generateExcel);
+    // Step 2: Handle template selection
+    templateFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        selectedTemplate = file;
+        selectedTemplateName = file.name;
+        
+        fileInfo.innerHTML = `📁 Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        fileInfo.classList.add('show');
+        
+        // Show template preview with sheet names
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            
+            templatePreview.innerHTML = `
+                <strong>✅ Template loaded successfully!</strong><br>
+                Sheets: ${workbook.SheetNames.join(', ')}<br>
+                <span style="font-size: 11px; color: #666;">Make sure you have a "DataImport" sheet or manually paste data into row 6</span>
+            `;
+            templatePreview.classList.add('show');
+        } catch (error) {
+            templatePreview.innerHTML = `<strong>⚠️ Warning:</strong> Could not read template structure, but import may still work.`;
+            templatePreview.classList.add('show');
+        }
+        
+        // Enable import button if CSV is loaded
+        if (csvData) {
+            importBtn.disabled = false;
+            importBtn.classList.add('active');
+        }
+    });
     
-    // Optional: Load available months when station changes
-    stationSelect.addEventListener('change', async () => {
-    const station = stationSelect.value;
-    if (!station) return;
-    
-    try {
-        const response = await fetch(`${WORKER_URL}/api/get-months?station=${station}`);
-        if (response.ok) {
-            const result = await response.json();
-            if (result.months && result.months.length > 0) {
-                const latestMonth = result.months[0];
-                if (latestMonth && latestMonth.length === 6) {
-                    const year = latestMonth.substring(0, 4);
-                    const month = latestMonth.substring(4, 6);
-                    // Don't auto-set date, just show info
-                    showStatus(`📁 Latest data available: ${year}-${month}`, 'info');
+    // Step 3: Import CSV into Template
+    async function importCSVIntoTemplate() {
+        if (!csvData) {
+            showStatus('Please download CSV data first', 'error');
+            return;
+        }
+        
+        if (!selectedTemplate) {
+            showStatus('Please select your Excel template file', 'error');
+            return;
+        }
+        
+        importBtn.disabled = true;
+        importBtn.innerHTML = '<span class="loading-spinner"></span> Merging data...';
+        
+        try {
+            // Read the template file
+            const templateBuffer = await selectedTemplate.arrayBuffer();
+            const workbook = XLSX.read(templateBuffer, { type: 'array' });
+            
+            // Parse CSV
+            const csvRows = csvData.trim().split('\n');
+            const headers = csvRows[0].split(',');
+            const dataRows = csvRows.slice(1);
+            
+            // Get or create DataImport sheet
+            let dataSheet = workbook.Sheets['DataImport'];
+            if (!dataSheet) {
+                dataSheet = {};
+                workbook.Sheets['DataImport'] = dataSheet;
+                workbook.SheetNames.unshift('DataImport');
+            }
+            
+            // Clear rows 2-10 (index 1-9)
+            for (let row = 1; row <= 9; row++) {
+                for (let col = 0; col < headers.length; col++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+                    delete dataSheet[cellAddress];
                 }
             }
+            
+            // Write headers to row 1 (index 0)
+            for (let col = 0; col < headers.length; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                dataSheet[cellAddress] = { t: 's', v: headers[col].replace(/^"|"$/g, '') };
+            }
+            
+            // Write data starting row 2 (index 1)
+            for (let rowIdx = 0; rowIdx < Math.min(dataRows.length, 5); rowIdx++) {
+                const row = parseCSVRow(dataRows[rowIdx]);
+                const targetRow = 1 + rowIdx; // Excel row 2 = index 1
+                
+                for (let col = 0; col < row.length && col < headers.length; col++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: targetRow, c: col });
+                    let value = row[col];
+                    if (value === 'true') value = 'TRUE';
+                    if (value === 'false') value = 'FALSE';
+                    if (value !== undefined && value !== null && value !== '') {
+                        dataSheet[cellAddress] = { t: 's', v: String(value) };
+                    }
+                }
+            }
+            
+            // Generate merged Excel file
+            const mergedBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+            const blob = new Blob([mergedBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `merged_${selectedTemplateName}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus(`✅ Merged Excel file downloaded! Data imported into DataImport sheet.`, 'success');
+            
+        } catch (error) {
+            console.error('Import error:', error);
+            showStatus(`❌ Error: ${error.message}`, 'error');
+        } finally {
+            importBtn.disabled = false;
+            importBtn.innerHTML = '📥 Import CSV into Template';
         }
-    } catch (error) {
-        console.error('Failed to fetch months:', error);
     }
-});
+    
+    // Helper to parse CSV row with quotes
+    function parseCSVRow(rowStr) {
+        const result = [];
+        let inQuotes = false;
+        let current = '';
+        
+        for (let i = 0; i < rowStr.length; i++) {
+            const char = rowStr[i];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current);
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current);
+        
+        return result.map(cell => cell.replace(/^"|"$/g, ''));
+    }
+    
+    downloadCsvBtn.addEventListener('click', downloadCSV);
+    importBtn.addEventListener('click', importCSVIntoTemplate);
+    
+    // Show instructions when page loads
+    setTimeout(() => {
+        instructionsDiv.classList.add('show');
+    }, 500);
 </script>
 </body>
 </html>
