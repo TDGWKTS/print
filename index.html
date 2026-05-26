@@ -14,7 +14,7 @@
         }
         
         .container {
-            max-width: 700px;
+            max-width: 650px;
             margin: 0 auto;
         }
         
@@ -60,7 +60,6 @@
         }
         
         button {
-            width: 100%;
             padding: 14px;
             color: white;
             border: none;
@@ -69,7 +68,6 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            margin-top: 8px;
         }
         
         button:disabled {
@@ -93,12 +91,14 @@
             background: #4338CA;
         }
         
-        .btn-outline {
-            background: #6B7280;
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
         }
         
-        .btn-outline:hover {
-            background: #4B5563;
+        .button-group button {
+            flex: 1;
         }
         
         .status {
@@ -224,7 +224,7 @@
             font-family: monospace;
             overflow-x: auto;
             display: none;
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
         }
         
@@ -232,15 +232,14 @@
             display: block;
         }
         
-        .button-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 8px;
-        }
-        
-        .button-group button {
-            flex: 1;
-            margin-top: 0;
+        .optional-badge {
+            font-size: 11px;
+            font-weight: normal;
+            background: #e5e7eb;
+            color: #6B7280;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
         }
     </style>
 </head>
@@ -263,7 +262,7 @@
         </div>
         
         <div class="button-group">
-            <button id="downloadTemplateBtn" class="btn-outline">📁 Download Excel Template</button>
+            <button id="downloadTemplateBtn" class="btn-secondary">📁 Download Template <span class="optional-badge">Optional</span></button>
             <button id="downloadDataBtn" class="btn-primary">📥 Download Inspection Data</button>
         </div>
         
@@ -274,36 +273,37 @@
             <div class="step">
                 <div class="step-number">1</div>
                 <div class="step-text">
-                    <div class="step-title">Download Template (First Time Only)</div>
-                    Click <strong>Download Excel Template</strong> to get the master template with all formatting and formulas.
-                </div>
-            </div>
-            <div class="step">
-                <div class="step-number">2</div>
-                <div class="step-text">
                     <div class="step-title">Download Inspection Data</div>
                     Click <strong>Download Inspection Data</strong> to get the inspection records for the selected date.
                 </div>
             </div>
             <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-text">
+                    <div class="step-title">Open Your Excel Template</div>
+                    Open your existing <strong>WKTS Daily Inspection Tool(Template) V6.xlsx</strong> file.<br>
+                    <span style="font-size: 11px; color: #666;">(If you don't have it, click the Optional Template button above)</span>
+                </div>
+            </div>
+            <div class="step">
                 <div class="step-number">3</div>
                 <div class="step-text">
-                    <div class="step-title">Open Both Excel Files</div>
-                    Open the <strong>Template</strong> file and the <strong>Inspection Data</strong> file side by side.
+                    <div class="step-title">Open Downloaded File</div>
+                    Open the downloaded Excel file (<strong>wkts_YYYY-MM-DD_inspection_data.xlsx</strong>).
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">4</div>
                 <div class="step-text">
                     <div class="step-title">Copy Data</div>
-                    In the Inspection Data file, select all data cells (A2 to last row/column), press <strong>Ctrl+C</strong>.
+                    In the downloaded file, select all data cells from <strong>A2</strong> to the last row/column, then press <strong>Ctrl+C</strong>.
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">5</div>
                 <div class="step-text">
                     <div class="step-title">Paste to Print Worksheet</div>
-                    In the Template file, go to the <strong>Print</strong> worksheet, select cell <strong>A6</strong>, press <strong>Ctrl+V</strong>.
+                    In your template file, go to the <strong>Print</strong> worksheet, select cell <strong>A6</strong>, then press <strong>Ctrl+V</strong>.
                 </div>
             </div>
             <div class="step">
@@ -352,10 +352,10 @@
         }, 8000);
     }
     
-    // Download Template from R2
+    // Optional: Download Template from R2
     async function downloadTemplate() {
         downloadTemplateBtn.disabled = true;
-        downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading template...';
+        downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading...';
         
         try {
             const response = await fetch(`${WORKER_URL}/api/get-template?station=${STATION_ID}`);
@@ -375,17 +375,16 @@
             URL.revokeObjectURL(url);
             
             showStatus('✅ Template downloaded successfully!', 'success');
-            instructionsDiv.classList.add('show');
             
         } catch (error) {
             showStatus(`❌ Error: ${error.message}`, 'error');
         } finally {
             downloadTemplateBtn.disabled = false;
-            downloadTemplateBtn.innerHTML = '📁 Download Excel Template';
+            downloadTemplateBtn.innerHTML = '📁 Download Template';
         }
     }
     
-    // Download Inspection Data as Excel (Complete Headers)
+    // Main: Download Inspection Data
     async function downloadData() {
         const station = stationSelect.value;
         const date = dateSelect.value;
@@ -400,7 +399,6 @@
         dataPreviewDiv.classList.remove('show');
         
         try {
-            // Get CSV data from Worker
             const response = await fetch(`${WORKER_URL}/api/get-data-csv`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -418,16 +416,13 @@
             
             const csvData = await response.text();
             
-            // Parse CSV
             const lines = csvData.trim().split('\n');
             const headers = parseCSVRow(lines[0]);
             const dataRows = lines.slice(1);
             
-            // Create workbook with complete data
             const workbook = XLSX.utils.book_new();
             
-            // Build complete worksheet data with ALL headers (154 columns)
-            // These match your Print sheet exactly
+            // Complete headers matching your Print sheet
             const fullHeaders = [
                 'Date', 'Inspected By', 'Time', 'Weather', 'WB No.1', 'WB No.2', 'WB No.3', 'WB No.4',
                 'CCTV/ Recording System', 'Weight Display correctness', 'Vehicle No.', 'Type/ Origin',
@@ -452,18 +447,15 @@
                 'Wheelstopper Conditions (Remarks)', 'DG Storage', 'Compactor 6A'
             ];
             
-            // Map CSV headers to full headers (CSV has first 21 columns, rest empty)
             const worksheetData = [fullHeaders];
             
             for (const row of dataRows) {
                 const parsedRow = parseCSVRow(row);
                 const fullRow = [];
                 
-                // Fill first 21 columns from CSV data
                 for (let i = 0; i < 21; i++) {
                     fullRow[i] = parsedRow[i] || '';
                 }
-                // Fill remaining columns as empty
                 for (let i = 21; i < fullHeaders.length; i++) {
                     fullRow[i] = '';
                 }
@@ -471,13 +463,8 @@
             }
             
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-            
-            // Auto-size columns (basic)
-            worksheet['!cols'] = fullHeaders.map(() => ({ wch: 15 }));
-            
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Data');
             
-            // Generate Excel file
             const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
             const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = URL.createObjectURL(blob);
@@ -489,15 +476,13 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            // Show preview
             const previewLines = lines.slice(0, 6);
             dataPreviewDiv.innerHTML = `
                 <strong>📄 Data Preview (first ${Math.min(lines.length, 6)} rows):</strong><br>
                 <code>${previewLines.join('<br>')}</code><br>
                 ${lines.length > 6 ? '<span style="color:#666;">... and more rows</span>' : ''}
                 <hr>
-                <strong>Total records: ${lines.length - 1}</strong><br>
-                <strong>Total columns: ${fullHeaders.length}</strong> (matches Print sheet)
+                <strong>Total records: ${lines.length - 1}</strong>
             `;
             dataPreviewDiv.classList.add('show');
             
@@ -512,7 +497,6 @@
         }
     }
     
-    // Parse CSV row (handles quoted values)
     function parseCSVRow(rowStr) {
         const result = [];
         let inQuotes = false;
@@ -537,7 +521,6 @@
     downloadTemplateBtn.addEventListener('click', downloadTemplate);
     downloadDataBtn.addEventListener('click', downloadData);
     
-    // Show instructions on page load
     setTimeout(() => {
         instructionsDiv.classList.add('show');
     }, 500);
