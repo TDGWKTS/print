@@ -1,0 +1,422 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Inspection Records - Admin Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            padding: 30px 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d0d0d0;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            background: white;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #4F46E5;
+            box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #4F46E5;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        
+        button:hover {
+            background: #4338CA;
+        }
+        
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .status.info {
+            background: #DBEAFE;
+            color: #1E40AF;
+            display: block;
+        }
+        
+        .status.success {
+            background: #DCFCE7;
+            color: #166534;
+            display: block;
+        }
+        
+        .status.error {
+            background: #FEE2E2;
+            color: #991B1B;
+            display: block;
+        }
+        
+        .status.warning {
+            background: #FEF3C7;
+            color: #92400E;
+            display: block;
+        }
+        
+        .records-info {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            font-size: 13px;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .records-info.show {
+            display: block;
+        }
+        
+        .records-info strong {
+            color: #4F46E5;
+        }
+        
+        .records-list {
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .date-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 6px;
+        }
+        
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .note {
+            background: #FFFBEB;
+            border-left: 4px solid #F59E0B;
+            padding: 12px;
+            font-size: 12px;
+            color: #92400E;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h1>🖨️ Print Inspection Records</h1>
+        <div class="subtitle">Generate print-ready Excel file from cloud data</div>
+        
+        <div class="form-group">
+            <label>📍 Station</label>
+            <select id="stationSelect">
+                <option value="">Select station...</option>
+                <option value="wkts">WKTS (West Kowloon Transfer Station)</option>
+                <option value="nwnt">NWNT (North West New Territories)</option>
+                <option value="iets">IETS (Island East Transfer Station)</option>
+                <option value="iwts">IWTS (Island West Transfer Station)</option>
+                <option value="stts">STTS (South Transfer Station)</option>
+                <option value="oitf">OITF (Outlying Islands Transfer Facility)</option>
+                <option value="nlts">NLTS (North Lantau Transfer Station)</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>📅 Inspection Date</label>
+            <input type="date" id="dateSelect">
+            <div class="date-hint">Select the date of inspections to print</div>
+        </div>
+        
+        <button id="generateBtn">📄 Generate Print-Ready Excel</button>
+        
+        <div id="status" class="status"></div>
+        <div id="recordsInfo" class="records-info"></div>
+        
+        <hr>
+        
+        <div class="note">
+            💡 <strong>How it works:</strong><br>
+            1. Select station and date<br>
+            2. System fetches all inspections for that date from cloud<br>
+            3. Downloads Excel file with data in DataImport sheet<br>
+            4. Your Print sheet formulas reference DataImport<br>
+            5. Open the Excel file - your formatting is preserved<br>
+            6. Print directly from Excel
+        </div>
+    </div>
+    <div class="footer">
+        Powered by Cloudflare R2 | Data stored securely
+    </div>
+</div>
+
+<script>
+    const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
+    
+    const stationSelect = document.getElementById('stationSelect');
+    const dateSelect = document.getElementById('dateSelect');
+    const generateBtn = document.getElementById('generateBtn');
+    const statusDiv = document.getElementById('status');
+    const recordsInfoDiv = document.getElementById('recordsInfo');
+    
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    dateSelect.value = today;
+    
+    function showStatus(message, type) {
+        statusDiv.textContent = message;
+        statusDiv.className = `status ${type}`;
+        if (type !== 'info') {
+            setTimeout(() => {
+                if (statusDiv.textContent === message) {
+                    statusDiv.style.display = 'none';
+                }
+            }, 8000);
+        } else {
+            statusDiv.style.display = 'block';
+        }
+    }
+    
+    function showRecordsInfo(inspections, date, station) {
+        if (!inspections || inspections.length === 0) {
+            recordsInfoDiv.classList.remove('show');
+            return;
+        }
+        
+        recordsInfoDiv.innerHTML = `
+            <strong>📊 Found ${inspections.length} inspection(s) for ${station.toUpperCase()} on ${date}</strong>
+            <div class="records-list">
+                ${inspections.map((insp, i) => {
+                    const id = insp._metadata?.inspectionId || insp.id || 'Unknown';
+                    const time = insp.data?.txtTime || insp.time || '--:--';
+                    const inspector = insp.data?.cmbInspector || insp.inspector || 'Unknown';
+                    return `${i+1}. ${time} | ${inspector} | ${id.substring(0, 40)}...`;
+                }).join('<br>')}
+            </div>
+        `;
+        recordsInfoDiv.classList.add('show');
+    }
+    
+    async function generatePrint() {
+        const station = stationSelect.value;
+        const date = dateSelect.value;
+        
+        if (!station) {
+            showStatus('Please select a station', 'error');
+            return;
+        }
+        
+        if (!date) {
+            showStatus('Please select a date', 'error');
+            return;
+        }
+        
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '<span class="loading-spinner"></span> Generating...';
+        recordsInfoDiv.classList.remove('show');
+        showStatus(`🔍 Fetching inspections for ${station.toUpperCase()} on ${date}...`, 'info');
+        
+        try {
+            // Step 1: First check how many inspections exist (optional, for user feedback)
+            const yearMonth = date.substring(0, 4) + date.substring(5, 7);
+            const checkResponse = await fetch(`${WORKER_URL}/api/get-inspections`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stationId: station, yearMonth: yearMonth })
+            });
+            
+            if (checkResponse.ok) {
+                const checkResult = await checkResponse.json();
+                const allInspections = checkResult.inspections || [];
+                const filteredCount = allInspections.filter(insp => {
+                    const inspDate = insp.data?.date || insp.date || insp._metadata?.inspectionDate;
+                    return inspDate && inspDate.split('T')[0] === date;
+                }).length;
+                
+                if (filteredCount === 0) {
+                    showStatus(`⚠️ No inspections found for ${station.toUpperCase()} on ${date}`, 'warning');
+                    generateBtn.disabled = false;
+                    generateBtn.innerHTML = '📄 Generate Print-Ready Excel';
+                    return;
+                }
+                
+                showRecordsInfo(filteredCount > 0 ? [{ _metadata: {} }] : [], date, station);
+                showStatus(`📁 Found ${filteredCount} inspection(s). Generating Excel file...`, 'info');
+            }
+            
+            // Step 2: Generate print-ready Excel
+            const response = await fetch(`${WORKER_URL}/api/generate-print`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stationId: station, date: date })
+            });
+            
+            if (!response.ok) {
+                let errorMsg = `HTTP ${response.status}`;
+                try {
+                    const error = await response.json();
+                    errorMsg = error.error || errorMsg;
+                } catch(e) {}
+                throw new Error(errorMsg);
+            }
+            
+            // Get the filename from Content-Disposition header or create our own
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `${station}_${date}_printable.xlsx`;
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                if (match) filename = match[1];
+            }
+            
+            // Download the file
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus(`✅ Excel file generated successfully! ${filename} downloaded.`, 'success');
+            
+            // Refresh records info with actual data (optional - could fetch again)
+            const refreshResponse = await fetch(`${WORKER_URL}/api/get-inspections`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stationId: station, yearMonth: yearMonth })
+            });
+            
+            if (refreshResponse.ok) {
+                const refreshResult = await refreshResponse.json();
+                const allInspections = refreshResult.inspections || [];
+                const filteredInspections = allInspections.filter(insp => {
+                    const inspDate = insp.data?.date || insp.date || insp._metadata?.inspectionDate;
+                    return inspDate && inspDate.split('T')[0] === date;
+                });
+                showRecordsInfo(filteredInspections, date, station);
+            }
+            
+        } catch (error) {
+            console.error('Generation error:', error);
+            showStatus(`❌ Error: ${error.message}`, 'error');
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '📄 Generate Print-Ready Excel';
+        }
+    }
+    
+    generateBtn.addEventListener('click', generatePrint);
+    
+    // Optional: Load available months when station changes
+    stationSelect.addEventListener('change', async () => {
+        const station = stationSelect.value;
+        if (!station) return;
+        
+        try {
+            const response = await fetch(`${WORKER_URL}/api/get-months?station=${station}`);
+            if (response.ok) {
+                const result = await response.json();
+                if (result.months && result.months.length > 0) {
+                    console.log(`Available months for ${station}:`, result.months);
+                    // Could add a month selector dropdown here
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch months:', error);
+        }
+    });
+</script>
+</body>
+</html>
