@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Inspection Records - Auto Merge</title>
+    <title>Print Inspection Records</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -14,7 +14,7 @@
         }
         
         .container {
-            max-width: 700px;
+            max-width: 600px;
             margin: 0 auto;
         }
         
@@ -62,6 +62,7 @@
         button {
             width: 100%;
             padding: 14px;
+            background: #059669;
             color: white;
             border: none;
             border-radius: 12px;
@@ -72,29 +73,13 @@
             margin-top: 8px;
         }
         
-        button:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-        }
-        
-        .btn-csv {
-            background: #059669;
-        }
-        
-        .btn-csv:hover {
+        button:hover {
             background: #047857;
         }
         
-        .btn-import {
-            background: #4F46E5;
-        }
-        
-        .btn-import:hover {
-            background: #4338CA;
-        }
-        
-        .btn-import:disabled {
+        button:disabled {
             background: #9ca3af;
+            cursor: not-allowed;
         }
         
         .status {
@@ -145,17 +130,26 @@
             border-top: 1px solid #e5e7eb;
         }
         
-        .file-info {
-            margin-top: 12px;
-            padding: 10px;
-            background: #f3f4f6;
-            border-radius: 8px;
-            font-size: 12px;
+        .instructions {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 13px;
             display: none;
         }
         
-        .file-info.show {
+        .instructions.show {
             display: block;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .instructions li {
+            margin: 8px 0;
         }
         
         .note {
@@ -170,17 +164,17 @@
         
         .step {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 12px;
             margin-bottom: 16px;
-            padding: 8px;
+            padding: 12px;
             background: #f8f9fa;
             border-radius: 12px;
         }
         
         .step-number {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             background: #4F46E5;
             color: white;
             border-radius: 50%;
@@ -188,10 +182,35 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
         }
         
         .step-text {
             flex: 1;
+            line-height: 1.4;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .data-preview {
+            margin-top: 16px;
+            padding: 12px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            overflow-x: auto;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .data-preview.show {
+            display: block;
         }
     </style>
 </head>
@@ -199,20 +218,14 @@
 <div class="container">
     <div class="card">
         <h1>📄 Print Inspection Records</h1>
-        <div class="subtitle">Auto-merge CSV data into your Excel template</div>
-        
-        <!-- Step 1 -->
-        <div class="step">
-            <div class="step-number">1</div>
-            <div class="step-text">Select station and date</div>
-        </div>
+        <div class="subtitle">Download data, then copy into your Excel template</div>
         
         <div class="form-group">
             <label>📍 Station</label>
             <select id="stationSelect">
                 <option value="">Select station...</option>
                 <option value="wkts">WKTS (West Kowloon Transfer Station)</option>
-                <option value="nwnt">NWNT (North West New Territories)</option>
+                <option value="nwnt">NWNT</option>
                 <option value="iets">IETS</option>
                 <option value="iwts">IWTS</option>
                 <option value="stts">STTS</option>
@@ -226,41 +239,41 @@
             <input type="date" id="dateSelect">
         </div>
         
-        <button id="downloadCsvBtn" class="btn-csv">📊 Step 1: Download CSV Data</button>
-        
-        <hr>
-        
-        <!-- Step 2 -->
-        <div class="step">
-            <div class="step-number">2</div>
-            <div class="step-text">Select your Excel template</div>
-        </div>
-        
-        <div class="form-group">
-            <label>📁 Excel Template</label>
-            <input type="file" id="templateFile" accept=".xlsx,.xls">
-            <div id="fileInfo" class="file-info"></div>
-        </div>
-        
-        <!-- Step 3 -->
-        <div class="step">
-            <div class="step-number">3</div>
-            <div class="step-text">Merge and download</div>
-        </div>
-        
-        <button id="importBtn" class="btn-import" disabled>📥 Step 3: Merge CSV into Template</button>
+        <button id="downloadBtn">📥 Step 1: Download Excel Data</button>
         
         <div id="status" class="status"></div>
+        <div id="dataPreview" class="data-preview"></div>
+        
+        <div id="instructions" class="instructions">
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-text">
+                    <div class="step-title">Open and Copy the Downloaded Excel Data</div>
+                    Open the downloaded Excel file, select all data cells (A2 to end), and press <strong>Ctrl+C</strong> to copy.
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-text">
+                    <div class="step-title">Paste to Print Worksheet Row 6</div>
+                    Open your master Excel template, go to the <strong>Print</strong> worksheet, select cell <strong>A6</strong>, and press <strong>Ctrl+V</strong> to paste.
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">✓</div>
+                <div class="step-text">
+                    <div class="step-title">Print</div>
+                    Your data is now in the Print sheet. Review and print as usual.
+                </div>
+            </div>
+        </div>
         
         <hr>
         
         <div class="note">
-            💡 <strong>How it works:</strong><br>
-            1. Download CSV data from cloud<br>
-            2. Select your Excel template (with all your formatting)<br>
-            3. Click merge – data is inserted into DataImport sheet<br>
-            4. Download the merged file and print<br>
-            <strong>100% of your formatting is preserved!</strong>
+            💡 <strong>Important:</strong> Your Excel template is never modified by any server.<br>
+            You simply copy data from the downloaded file and paste into your Print sheet row 6.<br>
+            <strong>All your formulas (checkmarks, calculations) and formatting remain intact.</strong>
         </div>
     </div>
 </div>
@@ -271,15 +284,10 @@
     
     const stationSelect = document.getElementById('stationSelect');
     const dateSelect = document.getElementById('dateSelect');
-    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
-    const templateFileInput = document.getElementById('templateFile');
-    const importBtn = document.getElementById('importBtn');
-    const fileInfo = document.getElementById('fileInfo');
+    const downloadBtn = document.getElementById('downloadBtn');
     const statusDiv = document.getElementById('status');
-    
-    let csvData = null;
-    let selectedTemplate = null;
-    let selectedTemplateName = null;
+    const dataPreviewDiv = document.getElementById('dataPreview');
+    const instructionsDiv = document.getElementById('instructions');
     
     // Set default date to today
     const today = new Date().toISOString().split('T')[0];
@@ -295,8 +303,7 @@
         }, 8000);
     }
     
-    // Step 1: Download CSV
-    async function downloadCSV() {
+    async function downloadData() {
         const station = stationSelect.value;
         const date = dateSelect.value;
         
@@ -310,10 +317,13 @@
             return;
         }
         
-        downloadCsvBtn.disabled = true;
-        downloadCsvBtn.innerHTML = '<span class="loading-spinner"></span> Downloading CSV...';
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data...';
+        dataPreviewDiv.classList.remove('show');
+        instructionsDiv.classList.remove('show');
         
         try {
+            // First get CSV data from Worker
             const response = await fetch(`${WORKER_URL}/api/get-data-csv`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -329,134 +339,55 @@
                 throw new Error(errorMsg);
             }
             
-            csvData = await response.text();
+            const csvData = await response.text();
             
-            // Also save as downloadable CSV file
-            const blob = new Blob([csvData], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${station}_${date}_data.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            const rowCount = csvData.trim().split('\n').length - 1;
-            showStatus(`✅ CSV downloaded! ${rowCount} record(s) ready.`, 'success');
-            
-            // Enable import if template is selected
-            if (selectedTemplate) {
-                importBtn.disabled = false;
-            }
-            
-        } catch (error) {
-            showStatus(`❌ Error: ${error.message}`, 'error');
-        } finally {
-            downloadCsvBtn.disabled = false;
-            downloadCsvBtn.innerHTML = '📊 Step 1: Download CSV Data';
-        }
-    }
-    
-    // Step 2: Handle template selection
-    templateFileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        selectedTemplate = file;
-        selectedTemplateName = file.name;
-        
-        fileInfo.innerHTML = `📁 Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-        fileInfo.classList.add('show');
-        
-        if (csvData) {
-            importBtn.disabled = false;
-        }
-    });
-    
-    // Step 3: Merge CSV into Template
-    async function mergeCSVIntoTemplate() {
-        if (!csvData) {
-            showStatus('Please download CSV data first', 'error');
-            return;
-        }
-        
-        if (!selectedTemplate) {
-            showStatus('Please select your Excel template file', 'error');
-            return;
-        }
-        
-        importBtn.disabled = true;
-        importBtn.innerHTML = '<span class="loading-spinner"></span> Merging data...';
-        
-        try {
-            // Read template file
-            const templateBuffer = await selectedTemplate.arrayBuffer();
-            const workbook = XLSX.read(templateBuffer, { type: 'array' });
-            
-            // Parse CSV
+            // Convert CSV to Excel workbook
             const lines = csvData.trim().split('\n');
             const headers = parseCSVRow(lines[0]);
             const dataRows = lines.slice(1);
             
-            // Get or create DataImport sheet
-            let dataSheet = workbook.Sheets['DataImport'];
-            if (!dataSheet) {
-                dataSheet = {};
-                workbook.Sheets['DataImport'] = dataSheet;
-                workbook.SheetNames.unshift('DataImport');
+            // Create workbook with a single sheet
+            const workbook = XLSX.utils.book_new();
+            const worksheetData = [headers];
+            
+            for (const row of dataRows) {
+                worksheetData.push(parseCSVRow(row));
             }
             
-            // Clear rows 2-10 (index 1-9)
-            for (let row = 1; row <= 9; row++) {
-                for (let col = 0; col < headers.length; col++) {
-                    const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-                    delete dataSheet[cellAddress];
-                }
-            }
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
             
-            // Write headers to row 1 (index 0)
-            for (let col = 0; col < headers.length; col++) {
-                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-                dataSheet[cellAddress] = { t: 's', v: headers[col] };
-            }
-            
-            // Write data starting row 2 (index 1)
-            for (let rowIdx = 0; rowIdx < Math.min(dataRows.length, 5); rowIdx++) {
-                const row = parseCSVRow(dataRows[rowIdx]);
-                const targetRow = 1 + rowIdx; // Excel row 2 = index 1
-                
-                for (let col = 0; col < row.length && col < headers.length; col++) {
-                    const cellAddress = XLSX.utils.encode_cell({ r: targetRow, c: col });
-                    let value = row[col];
-                    if (value === 'true') value = 'TRUE';
-                    if (value === 'false') value = 'FALSE';
-                    if (value !== undefined && value !== null && value !== '') {
-                        dataSheet[cellAddress] = { t: 's', v: String(value) };
-                    }
-                }
-            }
-            
-            // Generate merged file
-            const mergedBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
-            const blob = new Blob([mergedBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            // Generate Excel file
+            const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `merged_${selectedTemplateName}`;
+            a.download = `${station}_${date}_inspection_data.xlsx`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            showStatus(`✅ Merged Excel file downloaded! Data in DataImport sheet, rows 2-6.`, 'success');
+            // Show preview
+            const previewLines = lines.slice(0, 6);
+            dataPreviewDiv.innerHTML = `
+                <strong>📄 Data Preview (first ${Math.min(lines.length, 6)} rows):</strong><br>
+                <code>${previewLines.join('<br>')}</code><br>
+                ${lines.length > 6 ? '<span style="color:#666;">... and more rows</span>' : ''}
+                <hr>
+                <strong>Total records: ${lines.length - 1}</strong>
+            `;
+            dataPreviewDiv.classList.add('show');
+            
+            showStatus(`✅ Excel file downloaded! ${lines.length - 1} record(s) ready to copy.`, 'success');
+            instructionsDiv.classList.add('show');
             
         } catch (error) {
-            console.error('Merge error:', error);
             showStatus(`❌ Error: ${error.message}`, 'error');
         } finally {
-            importBtn.disabled = false;
-            importBtn.innerHTML = '📥 Step 3: Merge CSV into Template';
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = '📥 Step 1: Download Excel Data';
         }
     }
     
@@ -482,8 +413,7 @@
         return result.map(cell => cell.replace(/^"|"$/g, ''));
     }
     
-    downloadCsvBtn.addEventListener('click', downloadCSV);
-    importBtn.addEventListener('click', mergeCSVIntoTemplate);
+    downloadBtn.addEventListener('click', downloadData);
 </script>
 </body>
 </html>
