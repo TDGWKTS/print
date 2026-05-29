@@ -241,6 +241,18 @@
             border-radius: 20px;
             margin-left: 8px;
         }
+        
+        .stats {
+            background: #e0e7ff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+        
+        .stats strong {
+            color: #4F46E5;
+        }
     </style>
 </head>
 <body>
@@ -327,6 +339,7 @@
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script>
+    // Cloudflare Worker URL - Make sure this is correct
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
     const STATION_ID = 'wkts';
     
@@ -345,6 +358,7 @@
     function showStatus(message, type) {
         statusDiv.textContent = message;
         statusDiv.className = `status ${type}`;
+        statusDiv.style.display = 'block';
         setTimeout(() => {
             if (statusDiv.textContent === message) {
                 statusDiv.style.display = 'none';
@@ -352,7 +366,24 @@
         }, 8000);
     }
     
-    // Optional: Download Template from R2
+    // Function to test connection to Worker
+    async function testConnection() {
+        try {
+            const response = await fetch(`${WORKER_URL}/api/health`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (response.ok) {
+                console.log('✅ Worker connection successful');
+                return true;
+            }
+        } catch (error) {
+            console.error('❌ Worker connection failed:', error);
+        }
+        return false;
+    }
+    
+    // Download Template from R2
     async function downloadTemplate() {
         downloadTemplateBtn.disabled = true;
         downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading...';
@@ -361,7 +392,8 @@
             const response = await fetch(`${WORKER_URL}/api/get-template?station=${STATION_ID}`);
             
             if (!response.ok) {
-                throw new Error('Template not found in R2');
+                const errorText = await response.text();
+                throw new Error(`Template not found: ${errorText}`);
             }
             
             const blob = await response.blob();
@@ -377,14 +409,15 @@
             showStatus('✅ Template downloaded successfully!', 'success');
             
         } catch (error) {
-            showStatus(`❌ Error: ${error.message}`, 'error');
+            console.error('Template download error:', error);
+            showStatus(`❌ Error: ${error.message}. Make sure template exists in R2 bucket.`, 'error');
         } finally {
             downloadTemplateBtn.disabled = false;
             downloadTemplateBtn.innerHTML = '📁 Download Template';
         }
     }
     
-    // Main: Download Inspection Data (ALL columns mapped)
+    // Download Inspection Data from R2
     async function downloadData() {
         const station = stationSelect.value;
         const date = dateSelect.value;
@@ -395,45 +428,92 @@
         }
         
         downloadDataBtn.disabled = true;
-        downloadDataBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data...';
+        downloadDataBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data from R2...';
         dataPreviewDiv.classList.remove('show');
         
         try {
+            // First, test connection
+            const isConnected = await testConnection();
+            if (!isConnected) {
+                throw new Error('Cannot connect to Cloudflare Worker. Check your internet connection.');
+            }
+            
+            // Fetch data from Worker
             const response = await fetch(`${WORKER_URL}/api/get-data-csv`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ stationId: station, date: date })
+                body: JSON.stringify({ 
+                    stationId: station, 
+                    date: date 
+                })
             });
+            
+            console.log('Response status:', response.status);
             
             if (!response.ok) {
                 let errorMsg = `HTTP ${response.status}`;
                 try {
                     const error = await response.json();
-                    errorMsg = error.error || errorMsg;
-                } catch(e) {}
+                    errorMsg = error.error || error.message || errorMsg;
+                } catch(e) {
+                    // If response is not JSON, try text
+                    const errorText = await response.text();
+                    errorMsg = errorText || errorMsg;
+                }
                 throw new Error(errorMsg);
             }
             
-            const csvData = await response.text();
+            // Check content type
+            const contentType = response.headers.get('content-type');
+            let csvData;
+            
+            if (contentType && contentType.includes('application/json')) {
+                const jsonData = await response.json();
+                csvData = jsonData.csv || '';
+            } else {
+                csvData = await response.text();
+            }
+            
+            if (!csvData || csvData.trim().length === 0) {
+                throw new Error('No data found for the selected date');
+            }
             
             const lines = csvData.trim().split('\n');
             
-            // Parse ALL headers from CSV (full 154 columns)
-            const csvHeaders = parseCSVRow(lines[0]);
-            
-            const workbook = XLSX.utils.book_new();
-            
-            // Use the headers directly from CSV (they already match Print sheet)
-            const worksheetData = [csvHeaders];
-            
-            for (let i = 1; i < lines.length; i++) {
-                const parsedRow = parseCSVRow(lines[i]);
-                worksheetData.push(parsedRow);
+            if (lines.length < 2) {
+                throw new Error('No inspection records found for this date');
             }
             
+            // Parse ALL headers from CSV
+            const csvHeaders = parseCSVRow(lines[0]);
+            
+            console.log(`Found ${csvHeaders.length} columns and ${lines.length - 1} records`);
+            
+            // Create workbook
+            const workbook = XLSX.utils.book_new();
+            
+            // Build worksheet data
+            const worksheetData = [csvHeaders];
+            const rowData = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim()) {
+                    const parsedRow = parseCSVRow(lines[i]);
+                    worksheetData.push(parsedRow);
+                    rowData.push(parsedRow);
+                }
+            }
+            
+            // Create worksheet
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            
+            // Auto-size columns (optional)
+            const colWidths = csvHeaders.map(header => ({ wch: Math.min(header.length + 2, 30) }));
+            worksheet['!cols'] = colWidths;
+            
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Data');
             
+            // Generate Excel file
             const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
             const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = URL.createObjectURL(blob);
@@ -445,29 +525,46 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            // Show preview of first few rows
-            const previewLines = lines.slice(0, 6);
+            // Show preview
+            const previewLines = lines.slice(0, Math.min(lines.length, 6));
+            const previewText = previewLines.map(line => {
+                return line.length > 100 ? line.substring(0, 100) + '...' : line;
+            }).join('\n');
+            
             dataPreviewDiv.innerHTML = `
                 <strong>📄 Data Preview (first ${Math.min(lines.length, 6)} rows):</strong><br>
-                <code>${previewLines.join('<br>').substring(0, 500)}...</code><br>
-                ${lines.length > 6 ? '<span style="color:#666;">... and more rows</span>' : ''}
-                <hr>
-                <strong>Total records: ${lines.length - 1}</strong><br>
-                <strong>Total columns: ${csvHeaders.length}</strong>
+                <code style="font-size: 10px;">${escapeHtml(previewText)}</code>
+                <div class="stats" style="margin-top: 10px;">
+                    <strong>📊 Statistics:</strong><br>
+                    • Total records: <strong>${lines.length - 1}</strong><br>
+                    • Total columns: <strong>${csvHeaders.length}</strong><br>
+                    • Date range: <strong>${date}</strong>
+                </div>
             `;
             dataPreviewDiv.classList.add('show');
             
-            showStatus(`✅ Excel file downloaded! ${lines.length - 1} record(s) ready to copy.`, 'success');
+            showStatus(`✅ Success! ${lines.length - 1} record(s) downloaded. Ready to copy into your template.`, 'success');
             instructionsDiv.classList.add('show');
             
         } catch (error) {
+            console.error('Download error:', error);
             showStatus(`❌ Error: ${error.message}`, 'error');
+            
+            // Show helpful message for common errors
+            if (error.message.includes('fetch')) {
+                showStatus('❌ Cannot connect to server. Please check your internet connection and try again.', 'error');
+            } else if (error.message.includes('404')) {
+                showStatus('❌ No data found for selected date. Please try another date.', 'error');
+            } else if (error.message.includes('CORS')) {
+                showStatus('❌ CORS error. Please check Cloudflare Worker CORS configuration.', 'error');
+            }
         } finally {
             downloadDataBtn.disabled = false;
             downloadDataBtn.innerHTML = '📥 Download Inspection Data';
         }
     }
     
+    // Parse CSV row respecting quotes
     function parseCSVRow(rowStr) {
         const result = [];
         let inQuotes = false;
@@ -478,23 +575,48 @@
             if (char === '"') {
                 inQuotes = !inQuotes;
             } else if (char === ',' && !inQuotes) {
-                result.push(current);
+                result.push(current.trim());
                 current = '';
             } else {
                 current += char;
             }
         }
-        result.push(current);
+        result.push(current.trim());
         
-        return result.map(cell => cell.replace(/^"|"$/g, ''));
+        // Clean up quotes
+        return result.map(cell => {
+            let cleaned = cell.replace(/^"|"$/g, '');
+            // Replace double quotes with single quotes
+            cleaned = cleaned.replace(/""/g, '"');
+            return cleaned;
+        });
     }
     
+    // Escape HTML for preview
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Event listeners
     downloadTemplateBtn.addEventListener('click', downloadTemplate);
     downloadDataBtn.addEventListener('click', downloadData);
     
+    // Show instructions after a short delay
     setTimeout(() => {
         instructionsDiv.classList.add('show');
     }, 500);
+    
+    // Test connection on page load
+    window.addEventListener('load', async () => {
+        const isConnected = await testConnection();
+        if (!isConnected) {
+            showStatus('⚠️ Warning: Cannot connect to Cloudflare Worker. Please check your internet connection.', 'info');
+        } else {
+            console.log('✅ Ready to download data');
+        }
+    });
 </script>
 </body>
 </html>
