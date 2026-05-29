@@ -127,6 +127,12 @@
             display: block;
         }
         
+        .status.warning {
+            background: #FEF3C7;
+            color: #92400E;
+            display: block;
+        }
+        
         .loading-spinner {
             display: inline-block;
             width: 16px;
@@ -399,8 +405,11 @@
         dataPreviewDiv.classList.remove('show');
         
         try {
+            showStatus('📡 Fetching inspection records...', 'info');
+            
             // Get the yearMonth from date (YYYYMM)
             const yearMonth = date.substring(0, 4) + date.substring(5, 7);
+            console.log('Fetching for yearMonth:', yearMonth);
             
             // Fetch inspections from R2 via Worker
             const response = await fetch(`${WORKER_URL}/api/get-inspections`, {
@@ -409,20 +418,32 @@
                 body: JSON.stringify({ stationId: station, yearMonth: yearMonth })
             });
             
+            console.log('Response status:', response.status);
+            
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
             
             const result = await response.json();
+            console.log('Result:', result);
             
-            if (!result.success || result.count === 0) {
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to fetch inspections');
+            }
+            
+            if (result.count === 0) {
                 showStatus(`⚠️ No inspection records found for ${date}`, 'warning');
                 return;
             }
             
+            showStatus(`📋 Found ${result.count} inspection(s) for ${yearMonth}, filtering by date...`, 'info');
+            
             // Filter inspections by exact date
             const filteredInspections = result.inspections.filter(insp => {
-                const inspDate = insp.Date || insp._metadata?.inspectionDate;
+                // Try multiple date fields
+                let inspDate = insp.Date || insp._metadata?.inspectionDate || insp.date;
                 if (inspDate) {
                     // Handle different date formats
                     const datePart = inspDate.split('T')[0];
@@ -437,21 +458,30 @@
                 return false;
             });
             
+            console.log('Filtered inspections:', filteredInspections.length);
+            
             if (filteredInspections.length === 0) {
                 showStatus(`⚠️ No inspections found for ${date}`, 'warning');
                 return;
             }
             
-            // Get all headers from the first inspection
+            showStatus(`✅ Found ${filteredInspections.length} record(s) for ${date}`, 'success');
+            
+            // Get all headers from the first inspection (exclude metadata and undefined)
             const firstInspection = filteredInspections[0];
-            const headers = Object.keys(firstInspection).filter(key => !key.startsWith('_') && key !== 'undefined');
+            const headers = Object.keys(firstInspection).filter(key => 
+                !key.startsWith('_') && key !== 'undefined' && key !== 'timestamp'
+            );
+            
+            console.log('Headers:', headers);
             
             // Build worksheet data
             const worksheetData = [headers];
             
             for (const insp of filteredInspections) {
                 const row = headers.map(header => {
-                    let value = insp[header] || '';
+                    let value = insp[header];
+                    if (value === undefined || value === null) value = '';
                     return value;
                 });
                 worksheetData.push(row);
@@ -482,7 +512,7 @@
             const previewText = previewRows.map(row => row.join(',')).join('<br>');
             dataPreviewDiv.innerHTML = `
                 <strong>📄 Data Preview (first ${Math.min(worksheetData.length, 6)} rows):</strong><br>
-                <code>${previewText.substring(0, 500)}...</code><br>
+                <code>${previewText.substring(0, 800)}...</code><br>
                 <hr>
                 <strong>Total records: ${filteredInspections.length}</strong><br>
                 <strong>Total columns: ${headers.length}</strong>
