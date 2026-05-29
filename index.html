@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Inspection Records - WKTS</title>
+    <title>Print Inspection Records - Multi-Station</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -81,24 +81,6 @@
         
         .btn-primary:hover {
             background: #047857;
-        }
-        
-        .btn-secondary {
-            background: #4F46E5;
-        }
-        
-        .btn-secondary:hover {
-            background: #4338CA;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 8px;
-        }
-        
-        .button-group button {
-            flex: 1;
         }
         
         .status {
@@ -237,28 +219,25 @@
         .data-preview.show {
             display: block;
         }
-        
-        .optional-badge {
-            font-size: 11px;
-            font-weight: normal;
-            background: #e5e7eb;
-            color: #6B7280;
-            padding: 2px 8px;
-            border-radius: 20px;
-            margin-left: 8px;
-        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="card">
         <h1>📄 Print Inspection Records</h1>
-        <div class="subtitle">West Kowloon Transfer Station (WKTS)</div>
+        <div class="subtitle">Select station and date to export inspection data</div>
         
         <div class="form-group">
             <label>📍 Station</label>
             <select id="stationSelect">
+                <option value="">Select station...</option>
                 <option value="wkts">WKTS (West Kowloon Transfer Station)</option>
+                <option value="nwnt">NWNT (North West New Territories)</option>
+                <option value="iets">IETS (Island East Transfer Station)</option>
+                <option value="iwts">IWTS (Island West Transfer Station)</option>
+                <option value="stts">STTS (South Transfer Station)</option>
+                <option value="oitf">OITF (Outlying Islands Transfer Facility)</option>
+                <option value="nlts">NLTS (North Lantau Transfer Station)</option>
             </select>
         </div>
         
@@ -267,10 +246,7 @@
             <input type="date" id="dateSelect">
         </div>
         
-        <div class="button-group">
-            <button id="downloadTemplateBtn" class="btn-secondary">📁 Download Template <span class="optional-badge">Optional</span></button>
-            <button id="downloadDataBtn" class="btn-primary">📥 Download Inspection Data</button>
-        </div>
+        <button id="downloadDataBtn" class="btn-primary">📥 Download Inspection Data</button>
         
         <div id="status" class="status"></div>
         <div id="dataPreview" class="data-preview"></div>
@@ -280,43 +256,42 @@
                 <div class="step-number">1</div>
                 <div class="step-text">
                     <div class="step-title">Download Inspection Data</div>
-                    Click <strong>Download Inspection Data</strong> to get the inspection records for the selected date.
+                    Click <strong>Download Inspection Data</strong> to get the inspection records for the selected station and date.
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">2</div>
                 <div class="step-text">
                     <div class="step-title">Open Your Excel Template</div>
-                    Open your existing <strong>WKTS Daily Inspection Tool(Template) V6.xlsx</strong> file.<br>
-                    <span style="font-size: 11px; color: #666;">(If you don't have it, click the Optional Template button above)</span>
+                    Open your existing Excel template for the selected station.
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">3</div>
                 <div class="step-text">
                     <div class="step-title">Open Downloaded File</div>
-                    Open the downloaded Excel file (<strong>wkts_YYYY-MM-DD_inspection_data.xlsx</strong>).
+                    Open the downloaded Excel file.
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">4</div>
                 <div class="step-text">
                     <div class="step-title">Copy Data</div>
-                    In the downloaded file, select all data cells from <strong>A2</strong> to the last row/column, then press <strong>Ctrl+C</strong>.
+                    Select all data cells from <strong>A2</strong> to the last row/column, then press <strong>Ctrl+C</strong>.
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">5</div>
                 <div class="step-text">
                     <div class="step-title">Paste to Print Worksheet</div>
-                    In your template file, go to the <strong>Print</strong> worksheet, select cell <strong>A6</strong>, then press <strong>Ctrl+V</strong>.
+                    In your template, go to the <strong>Print</strong> worksheet, select cell <strong>A6</strong>, then press <strong>Ctrl+V</strong>.
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">✓</div>
                 <div class="step-text">
                     <div class="step-title">Print</div>
-                    Your data is now in the Print sheet. All formulas will auto-calculate. Review and print.
+                    Your data is now in the Print sheet. Review and print.
                 </div>
             </div>
         </div>
@@ -324,9 +299,9 @@
         <hr>
         
         <div class="note">
-            💡 <strong>Important:</strong> Your Excel template is never modified by any server.<br>
-            You simply copy data from the downloaded file and paste into your Print sheet row 6.<br>
-            <strong>All your formulas (checkmarks, calculations) and formatting remain intact.</strong>
+            💡 <strong>Important:</strong> Your Excel template is never modified.<br>
+            Copy data from the downloaded file and paste into your Print sheet row 6.<br>
+            <strong>All your formatting remains intact.</strong>
         </div>
     </div>
 </div>
@@ -334,229 +309,182 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script>
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
-    const STATION_ID = 'wkts';
     
-    // ========== EXCEL HEADERS (Matches your Print sheet exactly) ==========
-    const EXCEL_HEADERS = [
-        "Date", "Inspected By", "Time", "Weather", 
-        "WB No.1", "WB No.2", "WB No.3", "WB No.4",
-        "CCTV/ Recording System", "Weight Display correctness", 
-        "Bridge Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?", 
-        "Inspected by EPD", "Inspected by CHEC",
-        "Tipping Vehicle No.", "Waste Type", "Permitted Waste", 
-        "Traffic control signal", "CCTV system",
-        "Filter Press Value", 
-        "Status C1", "C1", 
-        "Status C2", "C2", 
-        "MF1", 
-        "Status C3", "C3", 
-        "MF2", 
-        "Status C4", "C4", 
-        "MF3", 
-        "Status C5", "C5", 
-        "MF4", 
-        "Status C6", "C6", 
-        "MF5", 
-        "Status C7", "C7", 
-        "MF6", 
-        "Status C8", "C8", 
-        "Status C9", "C9", 
-        "Status C10", "C10",
-        "Screen 1", "Screen 2", "Screen 3",
-        "1A", "1B", "2A", "2B",
-        "DAF 1", "DAF 2", "Area Cleaned",
-        "Crane 1", "Crane 2", "CHU 1", "CHU 2",
-        "145B", "55FV", "155WD", "Others",
-        "Lai Wan", "Ngon Shuen",
-        "Vehicle Wash 1", "Vehicle Wash 2", "Vehicle Wash 3",
-        "VW Clean ?", "Waste clearance > 30 mins? ", "Off-site litter > 24 hrs? ",
-        "Air Curtain",
-        "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5",
-        "Acid Scrubber 1", "Acid Scrubber 2", "Acid Scrubber 4", "Acid Scrubber 5",
-        "Alk Scrubber 1", "Alk Scrubber 2", "Alk Scrubber 3", "Alk Scrubber 4", "Alk Scrubber 5",
-        "ORP 1", "ORP 2", "ORP 3", "ORP 4", "ORP 5",
-        "Before Treatment ", "Anaerobic Tanks",
-        "Aerobic Tank T300", "Aerobic Tank T401", "Aerobic Tank T402", "Aerobic Tank T403", "Aerobic Tank T404",
-        "Final Clarifer", "Filter Press Status", "Bigas Tank", "Penstock",
-        "Remarks1", "Remarks2", "Remarks3", "Remarks 4",
-        "PLC", "Pre-Treat", "Penstock Chamber", "Aerobic Status",
-        "T-401", "T-402", "T-403", "T-404",
-        "Anaerobic Status", "pH", "Temp", "DO", "Biogas Level",
-        "Post-Treatment Status", "Centrifuge", "Wetsep", "Marine Vessel", "Storm water", "VWF wastewater",
-        "Rundown Screen", "FIQT -101", "FIQT -100", "FIT-313", "FIT-312", "T410", "FIT-413",
-        "Public", "Road Wash", "Marine", "Scrubbers", "VWS",
-        "DO T-401", "DO T-402", "DO T-403", "DO T-404",
-        "Temp T-401", "Temp T-402", "Temp T-403", "Temp T-404",
-        "pH T-404",
-        "Number of Containers Completed",
-        "Wheelstopper Conditions", "Wheelstopper Conditions (Remarks)",
-        "DG Storage",
-        "Status C6A", "C6A"
-    ];
+    // ========== STATION-SPECIFIC CONFIGURATIONS ==========
+    // Each station has its own headers and field-to-column mapping
+    // You need to populate these based on each station's Print sheet row 5
     
-    // ========== MAPPING: R2 JSON field to Excel column index ==========
-    // Using EXACT field names from your R2 JSON
-    const fieldToColumn = {
-        "Date": 0,
-        "Inspected By": 1,
-        "Time": 2,
-        "Weather": 3,
-        "WB No.1": 4,
-        "WB No.2": 5,
-        "WB No.3": 6,
-        "WB No.4": 7,
-        "CCTV/ Recording System": 8,
-        "Weight Display correctness": 9,
-        "Bridge Vehicle No.": 10,
-        "Type/ Origin": 11,
-        "Permitted waste?": 12,
-        "Any off-site queuing?": 13,
-        "Inspected by EPD": 14,
-        "Inspected by CHEC": 15,
-        "Tipping Vehicle No.": 16,
-        "Waste Type": 17,
-        "Permitted Waste": 18,
-        "Traffic control signal": 19,
-        "CCTV system": 20,
-        "Filter Press Value": 21,
-        "Status C1": 22,
-        "C1": 23,
-        "Status C2": 24,
-        "C2": 25,
-        "MF1": 26,
-        "Status C3": 27,
-        "C3": 28,
-        "MF2": 29,
-        "Status C4": 30,
-        "C4": 31,
-        "MF3": 32,
-        "Status C5": 33,
-        "C5": 34,
-        "MF4": 35,
-        "Status C6": 36,
-        "C6": 37,
-        "MF5": 38,
-        "Status C7": 39,
-        "C7": 40,
-        "MF6": 41,
-        "Status C8": 42,
-        "C8": 43,
-        "Status C9": 44,
-        "C9": 45,
-        "Status C10": 46,
-        "C10": 47,
-        "Screen 1": 48,
-        "Screen 2": 49,
-        "Screen 3": 50,
-        "1A": 51,
-        "1B": 52,
-        "2A": 53,
-        "2B": 54,
-        "DAF 1": 55,
-        "DAF 2": 56,
-        "Area Cleaned": 57,
-        "Crane 1": 58,
-        "Crane 2": 59,
-        "CHU 1": 60,
-        "CHU 2": 61,
-        "145B": 62,
-        "55FV": 63,
-        "155WD": 64,
-        "Others": 65,
-        "Lai Wan": 66,
-        "Ngon Shuen": 67,
-        "Vehicle Wash 1": 68,
-        "Vehicle Wash 2": 69,
-        "Vehicle Wash 3": 70,
-        "VW Clean ?": 71,
-        "Waste clearance > 30 mins? ": 72,
-        "Off-site litter > 24 hrs? ": 73,
-        "Air Curtain": 74,
-        "Scrubber 1": 75,
-        "Scrubber 2": 76,
-        "Scrubber 3": 77,
-        "Scrubber 4": 78,
-        "Scrubber 5": 79,
-        "Acid Scrubber 1": 80,
-        "Acid Scrubber 2": 81,
-        "Acid Scrubber 4": 82,
-        "Acid Scrubber 5": 83,
-        "Alk Scrubber 1": 84,
-        "Alk Scrubber 2": 85,
-        "Alk Scrubber 3": 86,
-        "Alk Scrubber 4": 87,
-        "Alk Scrubber 5": 88,
-        "ORP 1": 89,
-        "ORP 2": 90,
-        "ORP 3": 91,
-        "ORP 4": 92,
-        "ORP 5": 93,
-        "Before Treatment ": 94,
-        "Anaerobic Tanks": 95,
-        "Aerobic Tank T300": 96,
-        "Aerobic Tank T401": 97,
-        "Aerobic Tank T402": 98,
-        "Aerobic Tank T403": 99,
-        "Aerobic Tank T404": 100,
-        "Final Clarifer": 101,
-        "Filter Press Status": 102,
-        "Bigas Tank": 103,
-        "Penstock": 104,
-        "Remarks1": 105,
-        "Remarks2": 106,
-        "Remarks3": 107,
-        "Remarks 4": 108,
-        "PLC": 109,
-        "Pre-Treat": 110,
-        "Penstock Chamber": 111,
-        "Aerobic Status": 112,
-        "T-401": 113,
-        "T-402": 114,
-        "T-403": 115,
-        "T-404": 116,
-        "Anaerobic Status": 117,
-        "pH": 118,
-        "Temp": 119,
-        "DO": 120,
-        "Biogas Level": 121,
-        "Post-Treatment Status": 122,
-        "Centrifuge": 123,
-        "Wetsep": 124,
-        "Marine Vessel": 125,
-        "Storm water": 126,
-        "VWF wastewater": 127,
-        "Rundown Screen": 128,
-        "FIQT -101": 129,
-        "FIQT -100": 130,
-        "FIT-313": 131,
-        "FIT-312": 132,
-        "T410": 133,
-        "FIT-413": 134,
-        "Public": 135,
-        "Road Wash": 136,
-        "Marine": 137,
-        "Scrubbers": 138,
-        "VWS": 139,
-        "DO T-401": 140,
-        "DO T-402": 141,
-        "DO T-403": 142,
-        "DO T-404": 143,
-        "Temp T-401": 144,
-        "Temp T-402": 145,
-        "Temp T-403": 146,
-        "Temp T-404": 147,
-        "pH T-404": 148,
-        "Number of Containers Completed": 149,
-        "Wheelstopper Conditions": 150,
-        "Wheelstopper Conditions (Remarks)": 151,
-        "DG Storage": 152,
-        "Status C6A": 153,
-        "C6A": 154
+    const stationConfigs = {
+        // WKTS - Fully configured
+        wkts: {
+            name: "WKTS (West Kowloon Transfer Station)",
+            headers: [
+                "Date", "Inspected By", "Time", "Weather", 
+                "WB No.1", "WB No.2", "WB No.3", "WB No.4",
+                "CCTV/ Recording System", "Weight Display correctness", 
+                "Bridge Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?", 
+                "Inspected by EPD", "Inspected by CHEC",
+                "Tipping Vehicle No.", "Waste Type", "Permitted Waste", 
+                "Traffic control signal", "CCTV system",
+                "Filter Press Value", 
+                "Status C1", "C1", "Status C2", "C2", "MF1",
+                "Status C3", "C3", "MF2", "Status C4", "C4", "MF3",
+                "Status C5", "C5", "MF4", "Status C6", "C6", "MF5",
+                "Status C7", "C7", "MF6", "Status C8", "C8",
+                "Status C9", "C9", "Status C10", "C10",
+                "Screen 1", "Screen 2", "Screen 3",
+                "1A", "1B", "2A", "2B",
+                "DAF 1", "DAF 2", "Area Cleaned",
+                "Crane 1", "Crane 2", "CHU 1", "CHU 2",
+                "145B", "55FV", "155WD", "Others",
+                "Lai Wan", "Ngon Shuen",
+                "Vehicle Wash 1", "Vehicle Wash 2", "Vehicle Wash 3",
+                "VW Clean ?", "Waste clearance > 30 mins? ", "Off-site litter > 24 hrs? ",
+                "Air Curtain",
+                "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5",
+                "Acid Scrubber 1", "Acid Scrubber 2", "Acid Scrubber 4", "Acid Scrubber 5",
+                "Alk Scrubber 1", "Alk Scrubber 2", "Alk Scrubber 3", "Alk Scrubber 4", "Alk Scrubber 5",
+                "ORP 1", "ORP 2", "ORP 3", "ORP 4", "ORP 5",
+                "Before Treatment ", "Anaerobic Tanks",
+                "Aerobic Tank T300", "Aerobic Tank T401", "Aerobic Tank T402", "Aerobic Tank T403", "Aerobic Tank T404",
+                "Final Clarifer", "Filter Press Status", "Bigas Tank", "Penstock",
+                "Remarks1", "Remarks2", "Remarks3", "Remarks 4",
+                "PLC", "Pre-Treat", "Penstock Chamber", "Aerobic Status",
+                "T-401", "T-402", "T-403", "T-404",
+                "Anaerobic Status", "pH", "Temp", "DO", "Biogas Level",
+                "Post-Treatment Status", "Centrifuge", "Wetsep", "Marine Vessel", "Storm water", "VWF wastewater",
+                "Rundown Screen", "FIQT -101", "FIQT -100", "FIT-313", "FIT-312", "T410", "FIT-413",
+                "Public", "Road Wash", "Marine", "Scrubbers", "VWS",
+                "DO T-401", "DO T-402", "DO T-403", "DO T-404",
+                "Temp T-401", "Temp T-402", "Temp T-403", "Temp T-404",
+                "pH T-404",
+                "Number of Containers Completed",
+                "Wheelstopper Conditions", "Wheelstopper Conditions (Remarks)",
+                "DG Storage",
+                "Status C6A", "C6A"
+            ],
+            // Field mapping: R2 JSON field name -> Excel column index
+            fieldMap: {
+                "Date": 0, "Inspected By": 1, "Time": 2, "Weather": 3,
+                "WB No.1": 4, "WB No.2": 5, "WB No.3": 6, "WB No.4": 7,
+                "CCTV/ Recording System": 8, "Weight Display correctness": 9,
+                "Bridge Vehicle No.": 10, "Type/ Origin": 11, "Permitted waste?": 12, "Any off-site queuing?": 13,
+                "Inspected by EPD": 14, "Inspected by CHEC": 15,
+                "Tipping Vehicle No.": 16, "Waste Type": 17, "Permitted Waste": 18,
+                "Traffic control signal": 19, "CCTV system": 20,
+                "Filter Press Value": 21,
+                "Status C1": 22, "C1": 23, "Status C2": 24, "C2": 25, "MF1": 26,
+                "Status C3": 27, "C3": 28, "MF2": 29, "Status C4": 30, "C4": 31, "MF3": 32,
+                "Status C5": 33, "C5": 34, "MF4": 35, "Status C6": 36, "C6": 37, "MF5": 38,
+                "Status C7": 39, "C7": 40, "MF6": 41, "Status C8": 42, "C8": 43,
+                "Status C9": 44, "C9": 45, "Status C10": 46, "C10": 47,
+                "Screen 1": 48, "Screen 2": 49, "Screen 3": 50,
+                "1A": 51, "1B": 52, "2A": 53, "2B": 54,
+                "DAF 1": 55, "DAF 2": 56, "Area Cleaned": 57,
+                "Crane 1": 58, "Crane 2": 59, "CHU 1": 60, "CHU 2": 61,
+                "145B": 62, "55FV": 63, "155WD": 64, "Others": 65,
+                "Lai Wan": 66, "Ngon Shuen": 67,
+                "Vehicle Wash 1": 68, "Vehicle Wash 2": 69, "Vehicle Wash 3": 70,
+                "VW Clean ?": 71, "Waste clearance > 30 mins? ": 72, "Off-site litter > 24 hrs? ": 73,
+                "Air Curtain": 74,
+                "Scrubber 1": 75, "Scrubber 2": 76, "Scrubber 3": 77, "Scrubber 4": 78, "Scrubber 5": 79,
+                "Acid Scrubber 1": 80, "Acid Scrubber 2": 81, "Acid Scrubber 4": 82, "Acid Scrubber 5": 83,
+                "Alk Scrubber 1": 84, "Alk Scrubber 2": 85, "Alk Scrubber 3": 86, "Alk Scrubber 4": 87, "Alk Scrubber 5": 88,
+                "ORP 1": 89, "ORP 2": 90, "ORP 3": 91, "ORP 4": 92, "ORP 5": 93,
+                "Before Treatment ": 94, "Anaerobic Tanks": 95,
+                "Aerobic Tank T300": 96, "Aerobic Tank T401": 97, "Aerobic Tank T402": 98, "Aerobic Tank T403": 99, "Aerobic Tank T404": 100,
+                "Final Clarifer": 101, "Filter Press Status": 102, "Bigas Tank": 103, "Penstock": 104,
+                "Remarks1": 105, "Remarks2": 106, "Remarks3": 107, "Remarks 4": 108,
+                "PLC": 109, "Pre-Treat": 110, "Penstock Chamber": 111, "Aerobic Status": 112,
+                "T-401": 113, "T-402": 114, "T-403": 115, "T-404": 116,
+                "Anaerobic Status": 117, "pH": 118, "Temp": 119, "DO": 120, "Biogas Level": 121,
+                "Post-Treatment Status": 122, "Centrifuge": 123,
+                "Wetsep": 124, "Marine Vessel": 125, "Storm water": 126, "VWF wastewater": 127,
+                "Rundown Screen": 128,
+                "FIQT -101": 129, "FIQT -100": 130, "FIT-313": 131, "FIT-312": 132, "T410": 133, "FIT-413": 134,
+                "Public": 135, "Road Wash": 136, "Marine": 137, "Scrubbers": 138, "VWS": 139,
+                "DO T-401": 140, "DO T-402": 141, "DO T-403": 142, "DO T-404": 143,
+                "Temp T-401": 144, "Temp T-402": 145, "Temp T-403": 146, "Temp T-404": 147,
+                "pH T-404": 148,
+                "Number of Containers Completed": 149,
+                "Wheelstopper Conditions": 150, "Wheelstopper Conditions (Remarks)": 151,
+                "DG Storage": 152,
+                "Status C6A": 153, "C6A": 154
+            }
+        },
+        
+        // NWNT - Add your NWNT headers and field mapping here
+        nwnt: {
+            name: "NWNT (North West New Territories)",
+            headers: [
+                // Add your NWNT Print sheet headers here (row 5)
+                "Date", "Inspected By", "Time", "Weather",
+                // ... more headers based on your NWNT template
+            ],
+            fieldMap: {
+                // Map R2 JSON fields to Excel column indices for NWNT
+                // "Date": 0, "Inspected By": 1, etc.
+            }
+        },
+        
+        // IETS - Add your IETS headers and field mapping here
+        iets: {
+            name: "IETS (Island East Transfer Station)",
+            headers: [
+                // Add your IETS Print sheet headers here
+            ],
+            fieldMap: {
+                // Map R2 JSON fields to Excel column indices for IETS
+            }
+        },
+        
+        // IWTS - Add your IWTS headers and field mapping here
+        iwts: {
+            name: "IWTS (Island West Transfer Station)",
+            headers: [
+                // Add your IWTS Print sheet headers here
+            ],
+            fieldMap: {
+                // Map R2 JSON fields to Excel column indices for IWTS
+            }
+        },
+        
+        // STTS - Add your STTS headers and field mapping here
+        stts: {
+            name: "STTS (South Transfer Station)",
+            headers: [
+                // Add your STTS Print sheet headers here
+            ],
+            fieldMap: {
+                // Map R2 JSON fields to Excel column indices for STTS
+            }
+        },
+        
+        // OITF - Add your OITF headers and field mapping here
+        oitf: {
+            name: "OITF (Outlying Islands Transfer Facility)",
+            headers: [
+                // Add your OITF Print sheet headers here
+            ],
+            fieldMap: {
+                // Map R2 JSON fields to Excel column indices for OITF
+            }
+        },
+        
+        // NLTS - Add your NLTS headers and field mapping here
+        nlts: {
+            name: "NLTS (North Lantau Transfer Station)",
+            headers: [
+                // Add your NLTS Print sheet headers here
+            ],
+            fieldMap: {
+                // Map R2 JSON fields to Excel column indices for NLTS
+            }
+        }
     };
     
     const stationSelect = document.getElementById('stationSelect');
     const dateSelect = document.getElementById('dateSelect');
-    const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
     const downloadDataBtn = document.getElementById('downloadDataBtn');
     const statusDiv = document.getElementById('status');
     const dataPreviewDiv = document.getElementById('dataPreview');
@@ -570,51 +498,32 @@
         statusDiv.textContent = message;
         statusDiv.className = `status ${type}`;
         setTimeout(() => {
-            if (statusDiv.textContent === message) {
-                statusDiv.style.display = 'none';
-            }
+            if (statusDiv.textContent === message) statusDiv.style.display = 'none';
         }, 8000);
     }
     
-    // Optional: Download Template from R2
-    async function downloadTemplate() {
-        downloadTemplateBtn.disabled = true;
-        downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading...';
-        
-        try {
-            const response = await fetch(`${WORKER_URL}/api/get-template?station=${STATION_ID}`);
-            
-            if (!response.ok) {
-                throw new Error('Template not found in R2');
-            }
-            
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `WKTS_Master_Template.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            showStatus('✅ Template downloaded successfully!', 'success');
-            
-        } catch (error) {
-            showStatus(`❌ Error: ${error.message}`, 'error');
-        } finally {
-            downloadTemplateBtn.disabled = false;
-            downloadTemplateBtn.innerHTML = '📁 Download Template';
-        }
-    }
-    
-    // Main: Download Inspection Data
     async function downloadData() {
-        const station = stationSelect.value;
+        const stationId = stationSelect.value;
         const date = dateSelect.value;
+        
+        if (!stationId) {
+            showStatus('Please select a station', 'error');
+            return;
+        }
         
         if (!date) {
             showStatus('Please select a date', 'error');
+            return;
+        }
+        
+        const config = stationConfigs[stationId];
+        if (!config) {
+            showStatus(`Configuration not found for station: ${stationId}`, 'error');
+            return;
+        }
+        
+        if (config.headers.length === 0) {
+            showStatus(`Headers not configured for ${stationId}. Please update the configuration.`, 'error');
             return;
         }
         
@@ -625,18 +534,14 @@
         try {
             showStatus('📡 Fetching inspection records...', 'info');
             
-            // Convert selected date to DD/MM/YYYY format
             const [year, month, day] = date.split('-');
             const selectedDateDDMMYYYY = `${day}/${month}/${year}`;
-            
-            // Get the yearMonth from date (YYYYMM)
             const yearMonth = date.substring(0, 4) + date.substring(5, 7);
             
-            // Fetch inspections from R2 via Worker
             const response = await fetch(`${WORKER_URL}/api/get-inspections`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ stationId: station, yearMonth: yearMonth })
+                body: JSON.stringify({ stationId: stationId, yearMonth: yearMonth })
             });
             
             if (!response.ok) {
@@ -658,9 +563,7 @@
             const filteredInspections = result.inspections.filter(insp => {
                 let inspDate = insp.Date || insp._metadata?.inspectionDate || insp.date;
                 if (inspDate) {
-                    if (inspDate.includes('T')) {
-                        inspDate = inspDate.split('T')[0];
-                    }
+                    if (inspDate.includes('T')) inspDate = inspDate.split('T')[0];
                     if (inspDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
                         const [y, m, d] = inspDate.split('-');
                         inspDate = `${d}/${m}/${y}`;
@@ -677,18 +580,14 @@
             
             showStatus(`✅ Found ${filteredInspections.length} record(s)`, 'success');
             
-            // Build worksheet data using predefined headers and mapping
-            const worksheetData = [EXCEL_HEADERS];
+            // Build worksheet data using station-specific headers and mapping
+            const worksheetData = [config.headers];
             
             for (const insp of filteredInspections) {
-                const row = new Array(EXCEL_HEADERS.length).fill('');
-                
-                // Map each JSON field to its column position
+                const row = new Array(config.headers.length).fill('');
                 for (const [jsonKey, value] of Object.entries(insp)) {
-                    // Skip metadata and undefined
                     if (jsonKey.startsWith('_') || jsonKey === 'undefined' || jsonKey === 'timestamp') continue;
-                    
-                    const columnIndex = fieldToColumn[jsonKey];
+                    const columnIndex = config.fieldMap[jsonKey];
                     if (columnIndex !== undefined && value !== undefined && value !== null && value !== '') {
                         row[columnIndex] = value;
                     }
@@ -699,10 +598,7 @@
             // Create workbook
             const workbook = XLSX.utils.book_new();
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-            
-            // Auto-size columns
-            worksheet['!cols'] = EXCEL_HEADERS.map(() => ({ wch: 18 }));
-            
+            worksheet['!cols'] = config.headers.map(() => ({ wch: 18 }));
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Data');
             
             const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
@@ -710,7 +606,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${station}_${date}_inspection_data.xlsx`;
+            a.download = `${stationId}_${date}_inspection_data.xlsx`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -723,8 +619,9 @@
                 <strong>📄 Data Preview (first ${Math.min(worksheetData.length, 6)} rows, first 8 columns):</strong><br>
                 <code>${previewText.substring(0, 800)}...</code><br>
                 <hr>
+                <strong>Station: ${config.name}</strong><br>
                 <strong>Total records: ${filteredInspections.length}</strong><br>
-                <strong>Total columns: ${EXCEL_HEADERS.length}</strong>
+                <strong>Total columns: ${config.headers.length}</strong>
             `;
             dataPreviewDiv.classList.add('show');
             
@@ -740,7 +637,6 @@
         }
     }
     
-    downloadTemplateBtn.addEventListener('click', downloadTemplate);
     downloadDataBtn.addEventListener('click', downloadData);
     
     setTimeout(() => {
