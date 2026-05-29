@@ -68,7 +68,6 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            width: 100%;
         }
         
         button:disabled {
@@ -82,6 +81,24 @@
         
         .btn-primary:hover {
             background: #047857;
+        }
+        
+        .btn-secondary {
+            background: #4F46E5;
+        }
+        
+        .btn-secondary:hover {
+            background: #4338CA;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .button-group button {
+            flex: 1;
         }
         
         .status {
@@ -207,7 +224,7 @@
             font-family: monospace;
             overflow-x: auto;
             display: none;
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
         }
         
@@ -215,12 +232,14 @@
             display: block;
         }
         
-        .stats {
-            background: #e0e7ff;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-size: 13px;
+        .optional-badge {
+            font-size: 11px;
+            font-weight: normal;
+            background: #e5e7eb;
+            color: #6B7280;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 8px;
         }
     </style>
 </head>
@@ -231,11 +250,21 @@
         <div class="subtitle">West Kowloon Transfer Station (WKTS)</div>
         
         <div class="form-group">
+            <label>📍 Station</label>
+            <select id="stationSelect">
+                <option value="wkts">WKTS (West Kowloon Transfer Station)</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
             <label>📅 Inspection Date</label>
             <input type="date" id="dateSelect">
         </div>
         
-        <button id="downloadDataBtn" class="btn-primary">📥 Download Inspection Data</button>
+        <div class="button-group">
+            <button id="downloadTemplateBtn" class="btn-secondary">📁 Download Template <span class="optional-badge">Optional</span></button>
+            <button id="downloadDataBtn" class="btn-primary">📥 Download Inspection Data</button>
+        </div>
         
         <div id="status" class="status"></div>
         <div id="dataPreview" class="data-preview"></div>
@@ -252,7 +281,8 @@
                 <div class="step-number">2</div>
                 <div class="step-text">
                     <div class="step-title">Open Your Excel Template</div>
-                    Open your existing <strong>WKTS Daily Inspection Tool(Template) V6.xlsx</strong> file.
+                    Open your existing <strong>WKTS Daily Inspection Tool(Template) V6.xlsx</strong> file.<br>
+                    <span style="font-size: 11px; color: #666;">(If you don't have it, click the Optional Template button above)</span>
                 </div>
             </div>
             <div class="step">
@@ -288,8 +318,9 @@
         <hr>
         
         <div class="note">
-            💡 <strong>Important:</strong> The downloaded Excel file has the EXACT column headers matching your Print sheet.<br>
-            Simply copy cells A2 to the end and paste into your Print sheet at row 6.
+            💡 <strong>Important:</strong> Your Excel template is never modified by any server.<br>
+            You simply copy data from the downloaded file and paste into your Print sheet row 6.<br>
+            <strong>All your formulas (checkmarks, calculations) and formatting remain intact.</strong>
         </div>
     </div>
 </div>
@@ -297,8 +328,11 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script>
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
+    const STATION_ID = 'wkts';
     
+    const stationSelect = document.getElementById('stationSelect');
     const dateSelect = document.getElementById('dateSelect');
+    const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
     const downloadDataBtn = document.getElementById('downloadDataBtn');
     const statusDiv = document.getElementById('status');
     const dataPreviewDiv = document.getElementById('dataPreview');
@@ -308,39 +342,9 @@
     const today = new Date().toISOString().split('T')[0];
     dateSelect.value = today;
     
-    // Print headers exactly matching your Excel template
-    const PRINT_HEADERS = [
-        "Date", "Inspected By", "Time", "Weather", "WB No.1", "WB No.2", "WB No.3", "WB No.4",
-        "CCTV/ Recording System", "Weight Display correctness", "Vehicle No.", "Type/ Origin",
-        "Permitted waste?", "Any off-site queuing?", "Inspected by EPD", "Inspected by CHEC",
-        "Vehicle No.", "Waste Type", "Permitted Waste", "Traffic control signal", "CCTV system",
-        "Filter Press", "C1", "C1", "C2", "C2", "MF1", "C3", "C3", "MF2", "C4", "C4", "MF3",
-        "C5", "C5", "MF4", "C6", "C6", "MF5", "C7", "C7", "MF6", "C8", "C8", "C9", "C9", "C10",
-        "C10", "Screen 1", "Screen 2", "Screen 3", "1A", "1B", "2A", "2B", "DAF 1", "DAF 2",
-        "Area Cleaned", "Crane 1", "Crane 2", "CHU 1", "CHU 2", "145B", "55FV", "155WD", "Others",
-        "Lai Wan", "Ngon Shuen", "Vehicle Wash 1", "Vehicle Wash 2", "Vehicle Wash 3",
-        "VW Clean ?", "Waste clearance > 30 mins? ", "Off-site litter > 24 hrs? ", "Air Curtain",
-        "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5", "Acid Scrubber 1",
-        "Acid Scrubber 2", "Acid Scrubber 4", "Acid Scrubber 5", "Alk Scrubber 1", "Alk Scrubber 2",
-        "Alk Scrubber 3", "Alk Scrubber 4", "Alk Scrubber 5", "ORP 1", "ORP 2", "ORP 3", "ORP 4",
-        "ORP 5", "Before Treatment ", "Anaerobic Tanks", "Aerobic Tank T300", "Aerobic Tank T401",
-        "Aerobic Tank T402", "Aerobic Tank T403", "Aerobic Tank T404", "Final Clarifer",
-        "Filter Press", "Bigas Tank", "Penstock", "Remarks1", "Remarks2", "Remarks3", "Remarks 4",
-        "PLC", "Pre-Treat", "Penstock", "Status", "T-401", "T-402", "T-403", "T-404", "Status",
-        "pH", "Temp", "DO", "Biogas Level", "Status", "Centrifuge", "Wetsep", "Marine Vessel",
-        "Storm  water", "VWF wastewater", "Rundown Screen", "FIQT -101", "FIQT -100", "FIT-313",
-        "FIT-312", "T410", "FIT-413", "Public", "Road Wash", "Marine", "Scrubbers", "VWS",
-        "DO                T-401", "DO                T-402", "DO                T-403",
-        "DO                T-404", "Temp               T-401", "Temp               T-402",
-        "Temp               T-403", "Temp               T-404", "pH             T-404",
-        "Number of Containers Completed", "Wheelstopper Conditions",
-        "Wheelstopper Conditions (Remarks)", "DG Storage", "Compactor  6A", "Timestamp"
-    ];
-    
     function showStatus(message, type) {
         statusDiv.textContent = message;
         statusDiv.className = `status ${type}`;
-        statusDiv.style.display = 'block';
         setTimeout(() => {
             if (statusDiv.textContent === message) {
                 statusDiv.style.display = 'none';
@@ -348,99 +352,52 @@
         }, 8000);
     }
     
-    // Parse CSV row (handles quoted values)
-    function parseCSVRow(rowStr) {
-        const result = [];
-        let inQuotes = false;
-        let current = '';
-        
-        for (let i = 0; i < rowStr.length; i++) {
-            const char = rowStr[i];
-            if (char === '"') {
-                inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-                result.push(current.trim());
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        result.push(current.trim());
-        
-        return result.map(cell => cell.replace(/^"|"$/g, ''));
-    }
-    
-    // Convert checkbox boolean to checkmark
-    function formatCheckboxValue(value) {
-        if (value === true || value === 'true' || value === 'checked' || value === '✓') {
-            return '✓';
-        }
-        return '';
-    }
-    
-    // Convert date from DD/MM/YYYY to DD/MM/YYYY (keep as is) or handle YYYY-MM-DD
-    function formatDate(value) {
-        if (!value) return '';
-        // If already in DD/MM/YYYY format, return as is
-        if (value.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-            return value;
-        }
-        // If in YYYY-MM-DD format, convert to DD/MM/YYYY
-        if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            const [year, month, day] = value.split('-');
+    // Convert YYYY-MM-DD to DD/MM/YYYY
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        // Check if it's in YYYY-MM-DD format
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [year, month, day] = dateStr.split('-');
             return `${day}/${month}/${year}`;
         }
-        return value;
+        return dateStr;
     }
     
-    // Convert R2 record to Excel row format
-    function convertToExcelRow(record) {
-        const row = {};
+    // Optional: Download Template from R2
+    async function downloadTemplate() {
+        downloadTemplateBtn.disabled = true;
+        downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading...';
         
-        // Initialize all headers with empty string
-        for (const header of PRINT_HEADERS) {
-            row[header] = '';
-        }
-        
-        // Map each field from R2 record to Print header
-        for (const [key, value] of Object.entries(record)) {
-            // Skip metadata and undefined fields
-            if (key === '_metadata' || key === 'undefined' || key === 'timestamp') continue;
+        try {
+            const response = await fetch(`${WORKER_URL}/api/get-template?station=${STATION_ID}`);
             
-            // Find matching header (exact match or case-insensitive)
-            let matchedHeader = PRINT_HEADERS.find(h => h === key);
-            
-            if (matchedHeader) {
-                let formattedValue = value;
-                
-                // Format checkbox values
-                if (key.startsWith('WB') || key === 'C1' || key === 'C2' || key === 'MF1' || 
-                    key === 'MF2' || key === 'MF3' || key === 'MF4' || key === 'MF5' || key === 'MF6' ||
-                    key === 'Screen 1' || key === 'Screen 2' || key === 'Screen 3' ||
-                    key === 'DAF 1' || key === 'DAF 2' || key === 'Crane 1' || key === 'Crane 2' ||
-                    key === 'CHU 1' || key === 'CHU 2' || key === 'Lai Wan' || key === 'Ngon Shuen' ||
-                    key === 'Vehicle Wash 1' || key === 'Vehicle Wash 2' || key === 'Scrubber 1' ||
-                    key === 'Scrubber 2' || key === 'Scrubber 3' || key === 'Scrubber 4' || key === 'Scrubber 5' ||
-                    key === 'Aerobic Tank T300' || key === 'Aerobic Tank T401' || key === 'Aerobic Tank T402' ||
-                    key === 'Aerobic Tank T403' || key === 'Aerobic Tank T404' || key === 'Wheelstopper Conditions' ||
-                    key === 'Compactor  6A' || key === 'Inspected by EPD' || key === 'Inspected by CHEC') {
-                    formattedValue = formatCheckboxValue(value);
-                }
-                
-                // Format date
-                if (key === 'Date') {
-                    formattedValue = formatDate(value);
-                }
-                
-                row[matchedHeader] = formattedValue;
+            if (!response.ok) {
+                throw new Error('Template not found in R2');
             }
+            
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `WKTS_Master_Template.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus('✅ Template downloaded successfully!', 'success');
+            
+        } catch (error) {
+            showStatus(`❌ Error: ${error.message}`, 'error');
+        } finally {
+            downloadTemplateBtn.disabled = false;
+            downloadTemplateBtn.innerHTML = '📁 Download Template';
         }
-        
-        return row;
     }
     
-    // Download Inspection Data
+    // Main: Download Inspection Data
     async function downloadData() {
+        const station = stationSelect.value;
         const date = dateSelect.value;
         
         if (!date) {
@@ -449,83 +406,54 @@
         }
         
         downloadDataBtn.disabled = true;
-        downloadDataBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data from R2...';
+        downloadDataBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data...';
         dataPreviewDiv.classList.remove('show');
         
         try {
-            const station = 'wkts';
-            
-            // Fetch data from Worker - using the list endpoint
             const response = await fetch(`${WORKER_URL}/api/get-data-csv`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    stationId: station, 
-                    date: date 
-                })
+                body: JSON.stringify({ stationId: station, date: date })
             });
             
             if (!response.ok) {
                 let errorMsg = `HTTP ${response.status}`;
                 try {
                     const error = await response.json();
-                    errorMsg = error.error || error.message || errorMsg;
-                } catch(e) {
-                    const errorText = await response.text();
-                    errorMsg = errorText || errorMsg;
-                }
+                    errorMsg = error.error || errorMsg;
+                } catch(e) {}
                 throw new Error(errorMsg);
             }
             
-            const result = await response.json();
+            const csvData = await response.text();
             
-            // Handle different response formats
-            let records = [];
-            
-            if (result.success && result.data) {
-                // Format: { success: true, data: [...] }
-                records = result.data;
-            } else if (Array.isArray(result)) {
-                // Format: direct array
-                records = result;
-            } else if (result.records) {
-                // Format: { records: [...] }
-                records = result.records;
-            } else {
-                // Try to use result as is if it's an array
-                records = Array.isArray(result) ? result : [];
-            }
-            
-            if (!records || records.length === 0) {
-                throw new Error(`No inspection records found for ${date}`);
-            }
-            
-            console.log(`Found ${records.length} records`);
-            console.log('First record keys:', Object.keys(records[0]));
-            
-            // Convert each record to Excel row format
-            const excelRows = records.map(record => convertToExcelRow(record));
-            
-            // Build worksheet data
-            const worksheetData = [PRINT_HEADERS];
-            
-            for (const row of excelRows) {
-                const rowData = PRINT_HEADERS.map(header => row[header] || '');
-                worksheetData.push(rowData);
-            }
+            const lines = csvData.trim().split('\n');
+            const csvHeaders = parseCSVRow(lines[0]);
             
             // Create workbook
             const workbook = XLSX.utils.book_new();
+            
+            // Build worksheet data with formatted dates
+            const worksheetData = [csvHeaders];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const parsedRow = parseCSVRow(lines[i]);
+                
+                // Format the first column (Date) to DD/MM/YYYY
+                if (parsedRow[0]) {
+                    parsedRow[0] = formatDate(parsedRow[0]);
+                }
+                
+                worksheetData.push(parsedRow);
+            }
+            
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
             
             // Auto-size columns
-            worksheet['!cols'] = PRINT_HEADERS.map(header => ({ 
-                wch: Math.min(header.length + 3, 20) 
-            }));
+            worksheet['!cols'] = csvHeaders.map(() => ({ wch: 18 }));
             
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Data');
             
-            // Generate Excel file
             const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
             const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = URL.createObjectURL(blob);
@@ -538,31 +466,21 @@
             URL.revokeObjectURL(url);
             
             // Show preview
-            const previewRecords = excelRows.slice(0, 3);
-            const previewHtml = previewRecords.map((row, idx) => {
-                const sampleFields = ['Date', 'Inspected By', 'Time', 'Weather'];
-                const sampleData = sampleFields.map(f => `${f}: ${row[f] || '-'}`).join(' | ');
-                return `<div style="margin-bottom: 8px;"><strong>Record ${idx + 1}:</strong> ${sampleData}</div>`;
-            }).join('');
-            
+            const previewLines = lines.slice(0, 6);
             dataPreviewDiv.innerHTML = `
-                <strong>📄 Data Preview (first ${Math.min(excelRows.length, 3)} records):</strong><br>
-                ${previewHtml}
-                <div class="stats" style="margin-top: 10px;">
-                    <strong>📊 Statistics:</strong><br>
-                    • Total records: <strong>${excelRows.length}</strong><br>
-                    • Total columns: <strong>${PRINT_HEADERS.length}</strong><br>
-                    • Date: <strong>${date}</strong><br>
-                    • Headers match Print sheet: <strong style="color: #059669;">✓ Yes</strong>
-                </div>
+                <strong>📄 Data Preview (first ${Math.min(lines.length, 6)} rows):</strong><br>
+                <code>${previewLines.join('<br>').substring(0, 500)}...</code><br>
+                ${lines.length > 6 ? '<span style="color:#666;">... and more rows</span>' : ''}
+                <hr>
+                <strong>Total records: ${lines.length - 1}</strong><br>
+                <strong>Total columns: ${csvHeaders.length}</strong>
             `;
             dataPreviewDiv.classList.add('show');
             
-            showStatus(`✅ Success! ${excelRows.length} record(s) downloaded. Ready to copy into your template.`, 'success');
+            showStatus(`✅ Excel file downloaded! ${lines.length - 1} record(s) ready to copy.`, 'success');
             instructionsDiv.classList.add('show');
             
         } catch (error) {
-            console.error('Download error:', error);
             showStatus(`❌ Error: ${error.message}`, 'error');
         } finally {
             downloadDataBtn.disabled = false;
@@ -570,10 +488,30 @@
         }
     }
     
-    // Event listeners
+    function parseCSVRow(rowStr) {
+        const result = [];
+        let inQuotes = false;
+        let current = '';
+        
+        for (let i = 0; i < rowStr.length; i++) {
+            const char = rowStr[i];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current);
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current);
+        
+        return result.map(cell => cell.replace(/^"|"$/g, ''));
+    }
+    
+    downloadTemplateBtn.addEventListener('click', downloadTemplate);
     downloadDataBtn.addEventListener('click', downloadData);
     
-    // Show instructions after a short delay
     setTimeout(() => {
         instructionsDiv.classList.add('show');
     }, 500);
