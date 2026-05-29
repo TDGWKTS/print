@@ -336,6 +336,122 @@
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
     const STATION_ID = 'wkts';
     
+    // ========== EXCEL HEADERS (Matches your Print sheet exactly) ==========
+    const EXCEL_HEADERS = [
+        "Date", "Inspected By", "Time", "Weather", 
+        "WB No.1", "WB No.2", "WB No.3", "WB No.4",
+        "CCTV/ Recording System", "Weight Display correctness", 
+        "Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?", 
+        "Inspected by EPD", "Inspected by CHEC",
+        "Vehicle No.", "Waste Type", "Permitted Waste", 
+        "Traffic control signal", "CCTV system",
+        "Filter Press", 
+        "Status C1", "C1", 
+        "Status C2", "C2", 
+        "MF1", 
+        "Status C3", "C3", 
+        "MF2", 
+        "Status C4", "C4", 
+        "MF3", 
+        "Status C5", "C5", 
+        "MF4", 
+        "Status C6", "C6", 
+        "MF5", 
+        "Status C7", "C7", 
+        "MF6", 
+        "Status C8", "C8", 
+        "Status C9", "C9", 
+        "Status C10", "C10",
+        "Screen 1", "Screen 2", "Screen 3",
+        "1A", "1B", "2A", "2B",
+        "DAF 1", "DAF 2", "Area Cleaned",
+        "Crane 1", "Crane 2", "CHU 1", "CHU 2",
+        "145B", "55FV", "155WD", "Others",
+        "Lai Wan", "Ngon Shuen",
+        "Vehicle Wash 1", "Vehicle Wash 2", "Vehicle Wash 3",
+        "VW Clean ?", "Waste clearance > 30 mins? ", "Off-site litter > 24 hrs? ",
+        "Air Curtain",
+        "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5",
+        "Acid Scrubber 1", "Acid Scrubber 2", "Acid Scrubber 4", "Acid Scrubber 5",
+        "Alk Scrubber 1", "Alk Scrubber 2", "Alk Scrubber 3", "Alk Scrubber 4", "Alk Scrubber 5",
+        "ORP 1", "ORP 2", "ORP 3", "ORP 4", "ORP 5",
+        "Before Treatment ", "Anaerobic Tanks",
+        "Aerobic Tank T300", "Aerobic Tank T401", "Aerobic Tank T402", "Aerobic Tank T403", "Aerobic Tank T404",
+        "Final Clarifer", "Filter Press", "Bigas Tank", "Penstock",
+        "Remarks1", "Remarks2", "Remarks3", "Remarks 4",
+        "PLC", "Pre-Treat", "Penstock", "Status",
+        "T-401", "T-402", "T-403", "T-404",
+        "Status", "pH", "Temp", "DO", "Biogas Level",
+        "Status", "Centrifuge", "Wetsep", "Marine Vessel", "Storm  water", "VWF wastewater",
+        "Rundown Screen", "FIQT -101", "FIQT -100", "FIT-313", "FIT-312", "T410", "FIT-413",
+        "Public", "Road Wash", "Marine", "Scrubbers", "VWS",
+        "DO                T-401", "DO                T-402", "DO                T-403", "DO                T-404",
+        "Temp               T-401", "Temp               T-402", "Temp               T-403", "Temp               T-404",
+        "pH             T-404",
+        "Number of Containers Completed",
+        "Wheelstopper Conditions", "Wheelstopper Conditions (Remarks)",
+        "DG Storage",
+        "Status C6A", "C6A"
+    ];
+    
+    // ========== MAPPING: R2 JSON field to Excel column index ==========
+    const fieldToColumn = {
+        // Row 4-5 headers
+        "txtDate": 0, "cmbInspector": 1, "txtTime": 2, "cmbWeather": 3,
+        "chkWeightbridge1": 4, "chkWeightbridge2": 5, "chkWeightbridge3": 6, "chkWeightbridge4": 7,
+        "cmbCCTV": 8, "cmbWeightDis": 9, "bridgeWasteV": 10, "bridgeWasteT": 11,
+        "cmbPermitedW": 12, "cmboffQ": 13, "chktipping1": 14, "chktipping2": 15,
+        "tippingWasteV": 16, "tippingWasteT": 17, "cmbtippingPermitedW": 18,
+        "cmbtippingTraffic": 19, "cmbtippingCCTV": 20, "txtfPress": 21,
+        "chkC1": 22, "txtC1": 23,
+        "chkC2": 24, "txtC2": 25,
+        "chkMF1": 26,
+        "chkC3": 27, "txtC3": 28,
+        "chkMF2": 29,
+        "chkC4": 30, "txtC4": 31,
+        "chkMF3": 32,
+        "chkC5": 33, "txtC5": 34,
+        "chkMF4": 35,
+        "chkC6": 36, "txtC6": 37,
+        "chkMF5": 38,
+        "chkC7": 39, "txtC7": 40,
+        "chkMF6": 41,
+        "chkC8": 42, "txtC8": 43,
+        "chkC9": 44, "txtC9": 45,
+        "chkC10": 46, "txtC10": 47,
+        "chkScreen1": 48, "chkScreen2": 49, "chkScreen3": 50,
+        "txt1A": 51, "txt1B": 52, "txt2A": 53, "txt2B": 54,
+        "chkDAF1": 55, "chkDAF2": 56, "cmbGTW": 57,
+        "chkCrane1": 58, "chkCrane2": 59, "chkCHU1": 60, "chkCHU2": 61,
+        "txt145B": 62, "txt550FV": 63, "txt155W": 64, "txtOthers": 65,
+        "chkLaiwan": 66, "chkNgonshuen": 67,
+        "chkWash1": 68, "chkWash2": 69, "chkWash3": 70,
+        "cmbCleanliness": 71, "cmbMinutes": 72, "cmbHours": 73,
+        "cmbCurtain": 74,
+        "chkScrubber1": 75, "chkScrubber2": 76, "chkScrubber3": 77, "chkScrubber4": 78, "chkScrubber5": 79,
+        "txtAcid1": 80, "txtAcid2": 81, "txtAcid4": 82, "txtAcid5": 83,
+        "txtAlk1": 84, "txtAlk2": 85, "txtAlk3": 86, "txtAlk4": 87, "txtAlk5": 88,
+        "txtORP1": 89, "txtORP2": 90, "txtORP3": 91, "txtORP4": 92, "txtORP5": 93,
+        "cmbBefore": 94, "cmbAnaerobic": 95,
+        "chkT300": 96, "chkT401": 97, "chkT402": 98, "chkT403": 99, "chkT404": 100,
+        "cmbFinal": 101, "cmbFilter": 102, "cmbBiogas": 103, "cmbPenstock": 104,
+        "txtRemarks1": 105, "txtRemarks2": 106, "txtRemarks3": 107, "txtRemarks4": 108,
+        "cmbPLC": 109, "cmbPreT": 110, "cmbPenstockChamber": 111, "cmbAerobicS": 112,
+        "txtAT401": 113, "txtAT402": 114, "txtAT403": 115, "txtAT404": 116,
+        "cmbAnaerobicS": 117, "txtApH": 118, "txtATemp": 119, "txtADO": 120, "txtABiogas": 121,
+        "cmbPostT": 122, "cmbCent": 123,
+        "txtWetsep": 124, "txtMarineVessel": 125, "txtStorm": 126, "txtVWF": 127, "txtRundown": 128,
+        "txt101": 129, "txt100": 130, "txt313": 131, "txt312": 132, "txt410": 133, "txt413": 134,
+        "txtPublic": 135, "txtRoad": 136, "txtMarine": 137, "txtScrubbers": 138, "txtVWS": 139,
+        "txt401DO": 140, "txt402DO": 141, "txt403DO": 142, "txt404DO": 143,
+        "txt401Temp": 144, "txt402Temp": 145, "txt403Temp": 146, "txt404Temp": 147,
+        "txt404pH": 148,
+        "txtContainers": 149,
+        "chkWheelstoppers": 150, "txtWheelstoppers": 151,
+        "cmbDG": 152,
+        "chkC6A": 153, "txtC6A": 154
+    };
+    
     const stationSelect = document.getElementById('stationSelect');
     const dateSelect = document.getElementById('dateSelect');
     const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
@@ -390,155 +506,137 @@
         }
     }
     
-    // Main: Download Inspection Data (from JSON, not CSV)
-    // Main: Download Inspection Data (from JSON, not CSV)
-async function downloadData() {
-    const station = stationSelect.value;
-    const date = dateSelect.value;
-    
-    if (!date) {
-        showStatus('Please select a date', 'error');
-        return;
-    }
-    
-    downloadDataBtn.disabled = true;
-    downloadDataBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data...';
-    dataPreviewDiv.classList.remove('show');
-    
-    try {
-        showStatus('📡 Fetching inspection records...', 'info');
+    // Main: Download Inspection Data
+    async function downloadData() {
+        const station = stationSelect.value;
+        const date = dateSelect.value;
         
-        // Convert selected date to DD/MM/YYYY format for comparison
-        const [year, month, day] = date.split('-');
-        const selectedDateDDMMYYYY = `${day}/${month}/${year}`;
-        console.log('Selected date (DD/MM/YYYY):', selectedDateDDMMYYYY);
-        
-        // Get the yearMonth from date (YYYYMM)
-        const yearMonth = date.substring(0, 4) + date.substring(5, 7);
-        console.log('Fetching for yearMonth:', yearMonth);
-        
-        // Fetch inspections from R2 via Worker
-        const response = await fetch(`${WORKER_URL}/api/get-inspections`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ stationId: station, yearMonth: yearMonth })
-        });
-        
-        console.log('Response status:', response.status);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error response:', errorText);
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        console.log('Result:', result);
-        
-        if (!result.success) {
-            throw new Error(result.error || 'Failed to fetch inspections');
-        }
-        
-        if (result.count === 0) {
-            showStatus(`⚠️ No inspection records found for ${yearMonth}`, 'warning');
+        if (!date) {
+            showStatus('Please select a date', 'error');
             return;
         }
         
-        showStatus(`📋 Found ${result.count} inspection(s) for ${yearMonth}, filtering by date...`, 'info');
+        downloadDataBtn.disabled = true;
+        downloadDataBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data...';
+        dataPreviewDiv.classList.remove('show');
         
-        // Filter inspections by exact date (using DD/MM/YYYY format)
-        const filteredInspections = result.inspections.filter(insp => {
-            // Try to get date from various fields
-            let inspDate = insp.Date || insp._metadata?.inspectionDate || insp.date;
+        try {
+            showStatus('📡 Fetching inspection records...', 'info');
             
-            if (inspDate) {
-                // If date is in YYYY-MM-DD format, convert to DD/MM/YYYY
-                if (inspDate.match(/^\d{4}-\d{2}-\d{2}/)) {
-                    const [y, m, d] = inspDate.split('T')[0].split('-');
-                    inspDate = `${d}/${m}/${y}`;
-                }
-                // If date has time part, split it
-                if (inspDate.includes('T')) {
-                    inspDate = inspDate.split('T')[0];
-                }
-                console.log('Comparing:', inspDate, 'with', selectedDateDDMMYYYY);
-                return inspDate === selectedDateDDMMYYYY;
-            }
-            return false;
-        });
-        
-        console.log('Filtered inspections:', filteredInspections.length);
-        
-        if (filteredInspections.length === 0) {
-            showStatus(`⚠️ No inspections found for ${selectedDateDDMMYYYY}`, 'warning');
-            return;
-        }
-        
-        showStatus(`✅ Found ${filteredInspections.length} record(s) for ${selectedDateDDMMYYYY}`, 'success');
-        
-        // Get all headers from the first inspection (exclude metadata and undefined)
-        const firstInspection = filteredInspections[0];
-        const headers = Object.keys(firstInspection).filter(key => 
-            !key.startsWith('_') && key !== 'undefined' && key !== 'timestamp'
-        );
-        
-        console.log('Headers:', headers);
-        
-        // Build worksheet data
-        const worksheetData = [headers];
-        
-        for (const insp of filteredInspections) {
-            const row = headers.map(header => {
-                let value = insp[header];
-                if (value === undefined || value === null) value = '';
-                return value;
+            // Convert selected date to DD/MM/YYYY format
+            const [year, month, day] = date.split('-');
+            const selectedDateDDMMYYYY = `${day}/${month}/${year}`;
+            
+            // Get the yearMonth from date (YYYYMM)
+            const yearMonth = date.substring(0, 4) + date.substring(5, 7);
+            
+            // Fetch inspections from R2 via Worker
+            const response = await fetch(`${WORKER_URL}/api/get-inspections`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stationId: station, yearMonth: yearMonth })
             });
-            worksheetData.push(row);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to fetch inspections');
+            }
+            
+            if (result.count === 0) {
+                showStatus(`⚠️ No inspection records found for ${yearMonth}`, 'warning');
+                return;
+            }
+            
+            // Filter inspections by exact date
+            const filteredInspections = result.inspections.filter(insp => {
+                let inspDate = insp.Date || insp._metadata?.inspectionDate || insp.date;
+                if (inspDate) {
+                    if (inspDate.includes('T')) {
+                        inspDate = inspDate.split('T')[0];
+                    }
+                    if (inspDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        const [y, m, d] = inspDate.split('-');
+                        inspDate = `${d}/${m}/${y}`;
+                    }
+                    return inspDate === selectedDateDDMMYYYY;
+                }
+                return false;
+            });
+            
+            if (filteredInspections.length === 0) {
+                showStatus(`⚠️ No inspections found for ${selectedDateDDMMYYYY}`, 'warning');
+                return;
+            }
+            
+            showStatus(`✅ Found ${filteredInspections.length} record(s)`, 'success');
+            
+            // Build worksheet data using predefined headers and mapping
+            const worksheetData = [EXCEL_HEADERS];
+            
+            for (const insp of filteredInspections) {
+                const row = new Array(EXCEL_HEADERS.length).fill('');
+                
+                // Map each JSON field to its column position
+                for (const [jsonKey, value] of Object.entries(insp)) {
+                    // Skip metadata and undefined
+                    if (jsonKey.startsWith('_') || jsonKey === 'undefined' || jsonKey === 'timestamp') continue;
+                    
+                    const columnIndex = fieldToColumn[jsonKey];
+                    if (columnIndex !== undefined && value !== undefined && value !== null && value !== '') {
+                        row[columnIndex] = value;
+                    }
+                }
+                worksheetData.push(row);
+            }
+            
+            // Create workbook
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            
+            // Auto-size columns
+            worksheet['!cols'] = EXCEL_HEADERS.map(() => ({ wch: 18 }));
+            
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Data');
+            
+            const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${station}_${date}_inspection_data.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // Show preview
+            const previewRows = worksheetData.slice(0, 6);
+            const previewText = previewRows.map(row => row.slice(0, 10).join(',')).join('<br>');
+            dataPreviewDiv.innerHTML = `
+                <strong>📄 Data Preview (first ${Math.min(worksheetData.length, 6)} rows, first 10 columns):</strong><br>
+                <code>${previewText.substring(0, 800)}...</code><br>
+                <hr>
+                <strong>Total records: ${filteredInspections.length}</strong><br>
+                <strong>Total columns: ${EXCEL_HEADERS.length}</strong>
+            `;
+            dataPreviewDiv.classList.add('show');
+            
+            showStatus(`✅ Excel file downloaded! ${filteredInspections.length} record(s) ready to copy.`, 'success');
+            instructionsDiv.classList.add('show');
+            
+        } catch (error) {
+            console.error('Error:', error);
+            showStatus(`❌ Error: ${error.message}`, 'error');
+        } finally {
+            downloadDataBtn.disabled = false;
+            downloadDataBtn.innerHTML = '📥 Download Inspection Data';
         }
-        
-        // Create workbook
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-        
-        // Auto-size columns
-        worksheet['!cols'] = headers.map(() => ({ wch: 18 }));
-        
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Data');
-        
-        const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
-        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${station}_${date}_inspection_data.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        // Show preview
-        const previewRows = worksheetData.slice(0, 6);
-        const previewText = previewRows.map(row => row.join(',')).join('<br>');
-        dataPreviewDiv.innerHTML = `
-            <strong>📄 Data Preview (first ${Math.min(worksheetData.length, 6)} rows):</strong><br>
-            <code>${previewText.substring(0, 800)}...</code><br>
-            <hr>
-            <strong>Total records: ${filteredInspections.length}</strong><br>
-            <strong>Total columns: ${headers.length}</strong>
-        `;
-        dataPreviewDiv.classList.add('show');
-        
-        showStatus(`✅ Excel file downloaded! ${filteredInspections.length} record(s) ready to copy.`, 'success');
-        instructionsDiv.classList.add('show');
-        
-    } catch (error) {
-        console.error('Error:', error);
-        showStatus(`❌ Error: ${error.message}`, 'error');
-    } finally {
-        downloadDataBtn.disabled = false;
-        downloadDataBtn.innerHTML = '📥 Download Inspection Data';
     }
-}
     
     downloadTemplateBtn.addEventListener('click', downloadTemplate);
     downloadDataBtn.addEventListener('click', downloadData);
