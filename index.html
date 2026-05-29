@@ -14,7 +14,7 @@
         }
         
         .container {
-            max-width: 650px;
+            max-width: 750px;
             margin: 0 auto;
         }
         
@@ -224,22 +224,12 @@
             font-family: monospace;
             overflow-x: auto;
             display: none;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
         }
         
         .data-preview.show {
             display: block;
-        }
-        
-        .optional-badge {
-            font-size: 11px;
-            font-weight: normal;
-            background: #e5e7eb;
-            color: #6B7280;
-            padding: 2px 8px;
-            border-radius: 20px;
-            margin-left: 8px;
         }
         
         .stats {
@@ -252,6 +242,18 @@
         
         .stats strong {
             color: #4F46E5;
+        }
+        
+        .column-mapping {
+            font-size: 10px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .header-count {
+            font-size: 11px;
+            color: #059669;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -273,10 +275,7 @@
             <input type="date" id="dateSelect">
         </div>
         
-        <div class="button-group">
-            <button id="downloadTemplateBtn" class="btn-secondary">📁 Download Template <span class="optional-badge">Optional</span></button>
-            <button id="downloadDataBtn" class="btn-primary">📥 Download Inspection Data</button>
-        </div>
+        <button id="downloadDataBtn" class="btn-primary" style="width: 100%;">📥 Download Inspection Data</button>
         
         <div id="status" class="status"></div>
         <div id="dataPreview" class="data-preview"></div>
@@ -293,8 +292,7 @@
                 <div class="step-number">2</div>
                 <div class="step-text">
                     <div class="step-title">Open Your Excel Template</div>
-                    Open your existing <strong>WKTS Daily Inspection Tool(Template) V6.xlsx</strong> file.<br>
-                    <span style="font-size: 11px; color: #666;">(If you don't have it, click the Optional Template button above)</span>
+                    Open your existing <strong>WKTS Daily Inspection Tool(Template) V6.xlsx</strong> file.
                 </div>
             </div>
             <div class="step">
@@ -330,22 +328,243 @@
         <hr>
         
         <div class="note">
-            💡 <strong>Important:</strong> Your Excel template is never modified by any server.<br>
-            You simply copy data from the downloaded file and paste into your Print sheet row 6.<br>
-            <strong>All your formulas (checkmarks, calculations) and formatting remain intact.</strong>
+            💡 <strong>Important:</strong> The downloaded Excel file has the EXACT column headers matching your Print sheet.<br>
+            Simply copy cells A2 to the end and paste into your Print sheet at row 6.
         </div>
     </div>
 </div>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script>
-    // Cloudflare Worker URL - Make sure this is correct
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
     const STATION_ID = 'wkts';
     
-    const stationSelect = document.getElementById('stationSelect');
+    // ===== EXACT PRINT SHEET HEADERS (as provided) =====
+    const PRINT_HEADERS = [
+        "Date", "Inspected By", "Time", "Weather", "WB No.1", "WB No.2", "WB No.3", "WB No.4",
+        "CCTV/ Recording System", "Weight Display correctness", "Vehicle No.", "Type/ Origin",
+        "Permitted waste?", "Any off-site queuing?", "Inspected by EPD", "Inspected by CHEC",
+        "Vehicle No.", "Waste Type", "Permitted Waste", "Traffic control signal", "CCTV system",
+        "Filter Press", "C1", "C1", "C2", "C2", "MF1", "C3", "C3", "MF2", "C4", "C4", "MF3",
+        "C5", "C5", "MF4", "C6", "C6", "MF5", "C7", "C7", "MF6", "C8", "C8", "C9", "C9", "C10",
+        "C10", "Screen 1", "Screen 2", "Screen 3", "1A", "1B", "2A", "2B", "DAF 1", "DAF 2",
+        "Area Cleaned", "Crane 1", "Crane 2", "CHU 1", "CHU 2", "145B", "55FV", "155WD", "Others",
+        "Lai Wan", "Ngon Shuen", "Vehicle Wash 1", "Vehicle Wash 2", "Vehicle Wash 3",
+        "VW Clean ?", "Waste clearance > 30 mins? ", "Off-site litter > 24 hrs? ", "Air Curtain",
+        "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5", "Acid Scrubber 1",
+        "Acid Scrubber 2", "Acid Scrubber 4", "Acid Scrubber 5", "Alk Scrubber 1", "Alk Scrubber 2",
+        "Alk Scrubber 3", "Alk Scrubber 4", "Alk Scrubber 5", "ORP 1", "ORP 2", "ORP 3", "ORP 4",
+        "ORP 5", "Before Treatment ", "Anaerobic Tanks", "Aerobic Tank T300", "Aerobic Tank T401",
+        "Aerobic Tank T402", "Aerobic Tank T403", "Aerobic Tank T404", "Final Clarifer",
+        "Filter Press", "Bigas Tank", "Penstock", "Remarks1", "Remarks2", "Remarks3", "Remarks 4",
+        "PLC", "Pre-Treat", "Penstock", "Status", "T-401", "T-402", "T-403", "T-404", "Status",
+        "pH", "Temp", "DO", "Biogas Level", "Status", "Centrifuge", "Wetsep", "Marine Vessel",
+        "Storm  water", "VWF wastewater", "Rundown Screen", "FIQT -101", "FIQT -100", "FIT-313",
+        "FIT-312", "T410", "FIT-413", "Public", "Road Wash", "Marine", "Scrubbers", "VWS",
+        "DO                T-401", "DO                T-402", "DO                T-403",
+        "DO                T-404", "Temp               T-401", "Temp               T-402",
+        "Temp               T-403", "Temp               T-404", "pH             T-404",
+        "Number of Containers Completed", "Wheelstopper Conditions",
+        "Wheelstopper Conditions (Remarks)", "DG Storage", "Compactor  6A"
+    ];
+
+    // Mapping from R2 JSON keys to Print headers
+    const FIELD_MAPPING = {
+        // Basic info
+        "txtDate": "Date",
+        "cmbInspector": "Inspected By",
+        "txtTime": "Time",
+        "cmbWeather": "Weather",
+        
+        // Weightbridge
+        "chkWeightbridge1": "WB No.1",
+        "chkWeightbridge2": "WB No.2",
+        "chkWeightbridge3": "WB No.3",
+        "chkWeightbridge4": "WB No.4",
+        "cmbCCTV": "CCTV/ Recording System",
+        "cmbWeightDis": "Weight Display correctness",
+        
+        // Waste Data Input
+        "bridgeWasteV": "Vehicle No.",
+        "bridgeWasteT": "Type/ Origin",
+        "cmbPermitedW": "Permitted waste?",
+        "cmboffQ": "Any off-site queuing?",
+        "chktipping1": "Inspected by EPD",
+        "chktipping2": "Inspected by CHEC",
+        
+        // Tipping Waste
+        "tippingWasteV": "Vehicle No.",
+        "tippingWasteT": "Waste Type",
+        "cmbtippingPermitedW": "Permitted Waste",
+        "cmbtippingTraffic": "Traffic control signal",
+        "cmbtippingCCTV": "CCTV system",
+        
+        // Equipment
+        "txtfPress": "Filter Press",
+        
+        // Containers C1-C10 (each has checkbox and text)
+        "chkC1": "C1",
+        "txtC1": "C1",
+        "chkC2": "C2",
+        "txtC2": "C2",
+        "chkMF1": "MF1",
+        "chkC3": "C3",
+        "txtC3": "C3",
+        "chkMF2": "MF2",
+        "chkC4": "C4",
+        "txtC4": "C4",
+        "chkMF3": "MF3",
+        "chkC5": "C5",
+        "txtC5": "C5",
+        "chkMF4": "MF4",
+        "chkC6": "C6",
+        "txtC6": "C6",
+        "chkMF5": "MF5",
+        "chkC7": "C7",
+        "txtC7": "C7",
+        "chkMF6": "MF6",
+        "chkC8": "C8",
+        "txtC8": "C8",
+        "chkC9": "C9",
+        "txtC9": "C9",
+        "chkC10": "C10",
+        "txtC10": "C10",
+        
+        // GTW Area
+        "chkScreen1": "Screen 1",
+        "chkScreen2": "Screen 2",
+        "chkScreen3": "Screen 3",
+        "txt1A": "1A",
+        "txt1B": "1B",
+        "txt2A": "2A",
+        "txt2B": "2B",
+        "chkDAF1": "DAF 1",
+        "chkDAF2": "DAF 2",
+        "cmbGTW": "Area Cleaned",
+        
+        // Crane
+        "chkCrane1": "Crane 1",
+        "chkCrane2": "Crane 2",
+        "chkCHU1": "CHU 1",
+        "chkCHU2": "CHU 2",
+        
+        // Meters
+        "txt145B": "145B",
+        "txt550FV": "55FV",
+        "txt155W": "155WD",
+        "txtOthers": "Others",
+        "chkLaiwan": "Lai Wan",
+        "chkNgonshuen": "Ngon Shuen",
+        
+        // Vehicle Wash
+        "chkWash1": "Vehicle Wash 1",
+        "chkWash2": "Vehicle Wash 2",
+        "cmbCleanliness": "VW Clean ?",
+        "cmbMinutes": "Waste clearance > 30 mins? ",
+        "cmbHours": "Off-site litter > 24 hrs? ",
+        
+        // Air Monitoring
+        "cmbCurtain": "Air Curtain",
+        "chkScrubber1": "Scrubber 1",
+        "chkScrubber2": "Scrubber 2",
+        "chkScrubber3": "Scrubber 3",
+        "chkScrubber4": "Scrubber 4",
+        "chkScrubber5": "Scrubber 5",
+        "txtAcid1": "Acid Scrubber 1",
+        "txtAcid2": "Acid Scrubber 2",
+        "txtAcid4": "Acid Scrubber 4",
+        "txtAcid5": "Acid Scrubber 5",
+        "txtAlk1": "Alk Scrubber 1",
+        "txtAlk2": "Alk Scrubber 2",
+        "txtAlk3": "Alk Scrubber 3",
+        "txtAlk4": "Alk Scrubber 4",
+        "txtAlk5": "Alk Scrubber 5",
+        "txtORP1": "ORP 1",
+        "txtORP2": "ORP 2",
+        "txtORP3": "ORP 3",
+        "txtORP4": "ORP 4",
+        "txtORP5": "ORP 5",
+        "cmbBefore": "Before Treatment ",
+        "cmbAnaerobic": "Anaerobic Tanks",
+        
+        // Water Monitoring
+        "chkT300": "Aerobic Tank T300",
+        "chkT401": "Aerobic Tank T401",
+        "chkT402": "Aerobic Tank T402",
+        "chkT403": "Aerobic Tank T403",
+        "chkT404": "Aerobic Tank T404",
+        "cmbFinal": "Final Clarifer",
+        "cmbFilter": "Filter Press",
+        "cmbBiogas": "Bigas Tank",
+        "cmbPenstock": "Penstock",
+        
+        // Remarks
+        "txtRemarks1": "Remarks1",
+        "txtRemarks2": "Remarks2",
+        "txtRemarks3": "Remarks3",
+        "txtRemarks4": "Remarks 4",
+        
+        // Tank Farm
+        "cmbPLC": "PLC",
+        "cmbPreT": "Pre-Treat",
+        "cmbPenstockChamber": "Penstock",
+        "cmbAerobicS": "Status",
+        "txtAT401": "T-401",
+        "txtAT402": "T-402",
+        "txtAT403": "T-403",
+        "txtAT404": "T-404",
+        "cmbAnaerobicS": "Status",
+        "txtApH": "pH",
+        "txtATemp": "Temp",
+        "txtADO": "DO",
+        "txtABiogas": "Biogas Level",
+        "cmbPostT": "Status",
+        "cmbCent": "Centrifuge",
+        
+        // Meters
+        "txtWetsep": "Wetsep",
+        "txtMarineVessel": "Marine Vessel",
+        "txtStorm": "Storm  water",
+        "txtVWF": "VWF wastewater",
+        "txtRundown": "Rundown Screen",
+        "txt101": "FIQT -101",
+        "txt100": "FIQT -100",
+        "txt313": "FIT-313",
+        "txt312": "FIT-312",
+        "txt410": "T410",
+        "txt413": "FIT-413",
+        
+        // Environmental
+        "txtPublic": "Public",
+        "txtRoad": "Road Wash",
+        "txtMarine": "Marine",
+        "txtScrubbers": "Scrubbers",
+        "txtVWS": "VWS",
+        
+        // DO and Temp readings
+        "txt401DO": "DO                T-401",
+        "txt402DO": "DO                T-402",
+        "txt403DO": "DO                T-403",
+        "txt404DO": "DO                T-404",
+        "txt401Temp": "Temp               T-401",
+        "txt402Temp": "Temp               T-402",
+        "txt403Temp": "Temp               T-403",
+        "txt404Temp": "Temp               T-404",
+        "txt404pH": "pH             T-404",
+        
+        // Wheelstoppers & DG
+        "txtContainers": "Number of Containers Completed",
+        "chkWheelstoppers": "Wheelstopper Conditions",
+        "txtWheelstoppers": "Wheelstopper Conditions (Remarks)",
+        "cmbDG": "DG Storage",
+        "chkC6A": "Compactor  6A",
+        "txtC6A": "Compactor  6A",
+        
+        // Metadata
+        "timestamp": "Timestamp"
+    };
+
     const dateSelect = document.getElementById('dateSelect');
-    const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
     const downloadDataBtn = document.getElementById('downloadDataBtn');
     const statusDiv = document.getElementById('status');
     const dataPreviewDiv = document.getElementById('dataPreview');
@@ -366,60 +585,75 @@
         }, 8000);
     }
     
-    // Function to test connection to Worker
-    async function testConnection() {
-        try {
-            const response = await fetch(`${WORKER_URL}/api/health`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            if (response.ok) {
-                console.log('✅ Worker connection successful');
-                return true;
-            }
-        } catch (error) {
-            console.error('❌ Worker connection failed:', error);
+    // Convert checkbox value to checkmark
+    function formatCheckboxValue(value) {
+        if (value === true || value === 'true' || value === 'checked') {
+            return '✓';
         }
-        return false;
+        return '';
     }
     
-    // Download Template from R2
-    async function downloadTemplate() {
-        downloadTemplateBtn.disabled = true;
-        downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading...';
+    // Convert R2 JSON record to Print row format
+    function convertToPrintRow(record) {
+        const row = {};
         
-        try {
-            const response = await fetch(`${WORKER_URL}/api/get-template?station=${STATION_ID}`);
+        // Initialize all headers with empty string
+        for (const header of PRINT_HEADERS) {
+            row[header] = '';
+        }
+        
+        // Map each field to the correct Print header
+        for (const [jsonKey, printHeader] of Object.entries(FIELD_MAPPING)) {
+            let value = record[jsonKey] || '';
             
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Template not found: ${errorText}`);
+            // Format checkbox values
+            if (jsonKey.startsWith('chk')) {
+                value = formatCheckboxValue(value);
             }
             
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `WKTS_Master_Template.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // Format date from YYYY-MM-DD to DD/MM/YYYY
+            if (jsonKey === 'txtDate' && value && value.includes('-')) {
+                const [year, month, day] = value.split('-');
+                value = `${day}/${month}/${year}`;
+            }
             
-            showStatus('✅ Template downloaded successfully!', 'success');
+            // Handle special case for duplicate headers (C1 appears twice, etc.)
+            // For containers, we need to handle both checkbox and text fields
+            if (printHeader === 'C1') {
+                // First C1 is checkbox, second is text - we'll combine them
+                const checkboxValue = formatCheckboxValue(record['chkC1']);
+                const textValue = record['txtC1'] || '';
+                if (checkboxValue && textValue) {
+                    value = `${checkboxValue} ${textValue}`;
+                } else if (checkboxValue) {
+                    value = checkboxValue;
+                } else if (textValue) {
+                    value = textValue;
+                }
+            }
             
-        } catch (error) {
-            console.error('Template download error:', error);
-            showStatus(`❌ Error: ${error.message}. Make sure template exists in R2 bucket.`, 'error');
-        } finally {
-            downloadTemplateBtn.disabled = false;
-            downloadTemplateBtn.innerHTML = '📁 Download Template';
+            // Handle Compactor 6A (C6A)
+            if (printHeader === 'Compactor  6A') {
+                const checkboxValue = formatCheckboxValue(record['chkC6A']);
+                const textValue = record['txtC6A'] || '';
+                if (checkboxValue && textValue) {
+                    value = `${checkboxValue} ${textValue}`;
+                } else if (checkboxValue) {
+                    value = checkboxValue;
+                } else if (textValue) {
+                    value = textValue;
+                }
+            }
+            
+            row[printHeader] = value;
         }
+        
+        return row;
     }
     
     // Download Inspection Data from R2
     async function downloadData() {
-        const station = stationSelect.value;
+        const station = STATION_ID;
         const date = dateSelect.value;
         
         if (!date) {
@@ -432,12 +666,6 @@
         dataPreviewDiv.classList.remove('show');
         
         try {
-            // First, test connection
-            const isConnected = await testConnection();
-            if (!isConnected) {
-                throw new Error('Cannot connect to Cloudflare Worker. Check your internet connection.');
-            }
-            
             // Fetch data from Worker
             const response = await fetch(`${WORKER_URL}/api/get-data-csv`, {
                 method: 'POST',
@@ -448,68 +676,52 @@
                 })
             });
             
-            console.log('Response status:', response.status);
-            
             if (!response.ok) {
                 let errorMsg = `HTTP ${response.status}`;
                 try {
                     const error = await response.json();
                     errorMsg = error.error || error.message || errorMsg;
                 } catch(e) {
-                    // If response is not JSON, try text
                     const errorText = await response.text();
                     errorMsg = errorText || errorMsg;
                 }
                 throw new Error(errorMsg);
             }
             
-            // Check content type
-            const contentType = response.headers.get('content-type');
-            let csvData;
+            const result = await response.json();
             
-            if (contentType && contentType.includes('application/json')) {
-                const jsonData = await response.json();
-                csvData = jsonData.csv || '';
-            } else {
-                csvData = await response.text();
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to fetch data');
             }
             
-            if (!csvData || csvData.trim().length === 0) {
-                throw new Error('No data found for the selected date');
+            const records = result.data || [];
+            
+            if (!records || records.length === 0) {
+                throw new Error(`No inspection records found for ${date}`);
             }
             
-            const lines = csvData.trim().split('\n');
+            console.log(`Found ${records.length} records`);
+            console.log(`Total Print headers: ${PRINT_HEADERS.length}`);
             
-            if (lines.length < 2) {
-                throw new Error('No inspection records found for this date');
+            // Convert each record to Print row format
+            const printRows = records.map(record => convertToPrintRow(record));
+            
+            // Build worksheet data with Print headers
+            const worksheetData = [PRINT_HEADERS];
+            
+            for (const row of printRows) {
+                const rowData = PRINT_HEADERS.map(header => row[header] || '');
+                worksheetData.push(rowData);
             }
-            
-            // Parse ALL headers from CSV
-            const csvHeaders = parseCSVRow(lines[0]);
-            
-            console.log(`Found ${csvHeaders.length} columns and ${lines.length - 1} records`);
             
             // Create workbook
             const workbook = XLSX.utils.book_new();
-            
-            // Build worksheet data
-            const worksheetData = [csvHeaders];
-            const rowData = [];
-            
-            for (let i = 1; i < lines.length; i++) {
-                if (lines[i].trim()) {
-                    const parsedRow = parseCSVRow(lines[i]);
-                    worksheetData.push(parsedRow);
-                    rowData.push(parsedRow);
-                }
-            }
-            
-            // Create worksheet
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
             
-            // Auto-size columns (optional)
-            const colWidths = csvHeaders.map(header => ({ wch: Math.min(header.length + 2, 30) }));
-            worksheet['!cols'] = colWidths;
+            // Auto-size columns for better readability
+            worksheet['!cols'] = PRINT_HEADERS.map(header => ({ 
+                wch: Math.min(header.length + 3, 20) 
+            }));
             
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Data');
             
@@ -525,82 +737,44 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            // Show preview
-            const previewLines = lines.slice(0, Math.min(lines.length, 6));
-            const previewText = previewLines.map(line => {
-                return line.length > 100 ? line.substring(0, 100) + '...' : line;
-            }).join('\n');
+            // Show preview of first few records
+            const previewRecords = printRows.slice(0, 3);
+            const previewHtml = previewRecords.map((row, idx) => {
+                const sampleFields = ['Date', 'Inspected By', 'Time', 'Weather'];
+                const sampleData = sampleFields.map(f => `${f}: ${row[f] || '-'}`).join(' | ');
+                return `<div style="margin-bottom: 8px;"><strong>Record ${idx + 1}:</strong> ${sampleData}</div>`;
+            }).join('');
             
             dataPreviewDiv.innerHTML = `
-                <strong>📄 Data Preview (first ${Math.min(lines.length, 6)} rows):</strong><br>
-                <code style="font-size: 10px;">${escapeHtml(previewText)}</code>
+                <strong>📄 Data Preview (first ${Math.min(printRows.length, 3)} records):</strong><br>
+                ${previewHtml}
                 <div class="stats" style="margin-top: 10px;">
                     <strong>📊 Statistics:</strong><br>
-                    • Total records: <strong>${lines.length - 1}</strong><br>
-                    • Total columns: <strong>${csvHeaders.length}</strong><br>
-                    • Date range: <strong>${date}</strong>
+                    • Total records: <strong>${printRows.length}</strong><br>
+                    • Total columns: <strong>${PRINT_HEADERS.length}</strong><br>
+                    • Date: <strong>${date}</strong><br>
+                    • Headers match Print sheet: <strong style="color: #059669;">✓ Yes (${PRINT_HEADERS.length} columns)</strong>
+                </div>
+                <div class="header-count">
+                    💡 The Excel file has the exact same ${PRINT_HEADERS.length} headers as your Print sheet.<br>
+                    Simply copy cells A2 through the end (Ctrl+Shift+End) and paste into your Print sheet at row 6.
                 </div>
             `;
             dataPreviewDiv.classList.add('show');
             
-            showStatus(`✅ Success! ${lines.length - 1} record(s) downloaded. Ready to copy into your template.`, 'success');
+            showStatus(`✅ Success! ${printRows.length} record(s) downloaded. Headers match your Print sheet exactly!`, 'success');
             instructionsDiv.classList.add('show');
             
         } catch (error) {
             console.error('Download error:', error);
             showStatus(`❌ Error: ${error.message}`, 'error');
-            
-            // Show helpful message for common errors
-            if (error.message.includes('fetch')) {
-                showStatus('❌ Cannot connect to server. Please check your internet connection and try again.', 'error');
-            } else if (error.message.includes('404')) {
-                showStatus('❌ No data found for selected date. Please try another date.', 'error');
-            } else if (error.message.includes('CORS')) {
-                showStatus('❌ CORS error. Please check Cloudflare Worker CORS configuration.', 'error');
-            }
         } finally {
             downloadDataBtn.disabled = false;
             downloadDataBtn.innerHTML = '📥 Download Inspection Data';
         }
     }
     
-    // Parse CSV row respecting quotes
-    function parseCSVRow(rowStr) {
-        const result = [];
-        let inQuotes = false;
-        let current = '';
-        
-        for (let i = 0; i < rowStr.length; i++) {
-            const char = rowStr[i];
-            if (char === '"') {
-                inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-                result.push(current.trim());
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        result.push(current.trim());
-        
-        // Clean up quotes
-        return result.map(cell => {
-            let cleaned = cell.replace(/^"|"$/g, '');
-            // Replace double quotes with single quotes
-            cleaned = cleaned.replace(/""/g, '"');
-            return cleaned;
-        });
-    }
-    
-    // Escape HTML for preview
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
     // Event listeners
-    downloadTemplateBtn.addEventListener('click', downloadTemplate);
     downloadDataBtn.addEventListener('click', downloadData);
     
     // Show instructions after a short delay
@@ -608,15 +782,8 @@
         instructionsDiv.classList.add('show');
     }, 500);
     
-    // Test connection on page load
-    window.addEventListener('load', async () => {
-        const isConnected = await testConnection();
-        if (!isConnected) {
-            showStatus('⚠️ Warning: Cannot connect to Cloudflare Worker. Please check your internet connection.', 'info');
-        } else {
-            console.log('✅ Ready to download data');
-        }
-    });
+    console.log(`Loaded ${PRINT_HEADERS.length} Print headers`);
+    console.log(`Loaded ${Object.keys(FIELD_MAPPING).length} field mappings`);
 </script>
 </body>
 </html>
