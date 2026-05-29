@@ -14,7 +14,7 @@
         }
         
         .container {
-            max-width: 750px;
+            max-width: 700px;
             margin: 0 auto;
         }
         
@@ -68,6 +68,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            width: 100%;
         }
         
         button:disabled {
@@ -81,24 +82,6 @@
         
         .btn-primary:hover {
             background: #047857;
-        }
-        
-        .btn-secondary {
-            background: #4F46E5;
-        }
-        
-        .btn-secondary:hover {
-            background: #4338CA;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 8px;
-        }
-        
-        .button-group button {
-            flex: 1;
         }
         
         .status {
@@ -239,22 +222,6 @@
             margin-top: 15px;
             font-size: 13px;
         }
-        
-        .stats strong {
-            color: #4F46E5;
-        }
-        
-        .column-mapping {
-            font-size: 10px;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .header-count {
-            font-size: 11px;
-            color: #059669;
-            margin-top: 5px;
-        }
     </style>
 </head>
 <body>
@@ -264,18 +231,11 @@
         <div class="subtitle">West Kowloon Transfer Station (WKTS)</div>
         
         <div class="form-group">
-            <label>📍 Station</label>
-            <select id="stationSelect">
-                <option value="wkts">WKTS (West Kowloon Transfer Station)</option>
-            </select>
-        </div>
-        
-        <div class="form-group">
             <label>📅 Inspection Date</label>
             <input type="date" id="dateSelect">
         </div>
         
-        <button id="downloadDataBtn" class="btn-primary" style="width: 100%;">📥 Download Inspection Data</button>
+        <button id="downloadDataBtn" class="btn-primary">📥 Download Inspection Data</button>
         
         <div id="status" class="status"></div>
         <div id="dataPreview" class="data-preview"></div>
@@ -337,9 +297,18 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script>
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
-    const STATION_ID = 'wkts';
     
-    // ===== EXACT PRINT SHEET HEADERS (as provided) =====
+    const dateSelect = document.getElementById('dateSelect');
+    const downloadDataBtn = document.getElementById('downloadDataBtn');
+    const statusDiv = document.getElementById('status');
+    const dataPreviewDiv = document.getElementById('dataPreview');
+    const instructionsDiv = document.getElementById('instructions');
+    
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    dateSelect.value = today;
+    
+    // Print headers exactly matching your Excel template
     const PRINT_HEADERS = [
         "Date", "Inspected By", "Time", "Weather", "WB No.1", "WB No.2", "WB No.3", "WB No.4",
         "CCTV/ Recording System", "Weight Display correctness", "Vehicle No.", "Type/ Origin",
@@ -365,214 +334,8 @@
         "DO                T-404", "Temp               T-401", "Temp               T-402",
         "Temp               T-403", "Temp               T-404", "pH             T-404",
         "Number of Containers Completed", "Wheelstopper Conditions",
-        "Wheelstopper Conditions (Remarks)", "DG Storage", "Compactor  6A"
+        "Wheelstopper Conditions (Remarks)", "DG Storage", "Compactor  6A", "Timestamp"
     ];
-
-    // Mapping from R2 JSON keys to Print headers
-    const FIELD_MAPPING = {
-        // Basic info
-        "txtDate": "Date",
-        "cmbInspector": "Inspected By",
-        "txtTime": "Time",
-        "cmbWeather": "Weather",
-        
-        // Weightbridge
-        "chkWeightbridge1": "WB No.1",
-        "chkWeightbridge2": "WB No.2",
-        "chkWeightbridge3": "WB No.3",
-        "chkWeightbridge4": "WB No.4",
-        "cmbCCTV": "CCTV/ Recording System",
-        "cmbWeightDis": "Weight Display correctness",
-        
-        // Waste Data Input
-        "bridgeWasteV": "Vehicle No.",
-        "bridgeWasteT": "Type/ Origin",
-        "cmbPermitedW": "Permitted waste?",
-        "cmboffQ": "Any off-site queuing?",
-        "chktipping1": "Inspected by EPD",
-        "chktipping2": "Inspected by CHEC",
-        
-        // Tipping Waste
-        "tippingWasteV": "Vehicle No.",
-        "tippingWasteT": "Waste Type",
-        "cmbtippingPermitedW": "Permitted Waste",
-        "cmbtippingTraffic": "Traffic control signal",
-        "cmbtippingCCTV": "CCTV system",
-        
-        // Equipment
-        "txtfPress": "Filter Press",
-        
-        // Containers C1-C10 (each has checkbox and text)
-        "chkC1": "C1",
-        "txtC1": "C1",
-        "chkC2": "C2",
-        "txtC2": "C2",
-        "chkMF1": "MF1",
-        "chkC3": "C3",
-        "txtC3": "C3",
-        "chkMF2": "MF2",
-        "chkC4": "C4",
-        "txtC4": "C4",
-        "chkMF3": "MF3",
-        "chkC5": "C5",
-        "txtC5": "C5",
-        "chkMF4": "MF4",
-        "chkC6": "C6",
-        "txtC6": "C6",
-        "chkMF5": "MF5",
-        "chkC7": "C7",
-        "txtC7": "C7",
-        "chkMF6": "MF6",
-        "chkC8": "C8",
-        "txtC8": "C8",
-        "chkC9": "C9",
-        "txtC9": "C9",
-        "chkC10": "C10",
-        "txtC10": "C10",
-        
-        // GTW Area
-        "chkScreen1": "Screen 1",
-        "chkScreen2": "Screen 2",
-        "chkScreen3": "Screen 3",
-        "txt1A": "1A",
-        "txt1B": "1B",
-        "txt2A": "2A",
-        "txt2B": "2B",
-        "chkDAF1": "DAF 1",
-        "chkDAF2": "DAF 2",
-        "cmbGTW": "Area Cleaned",
-        
-        // Crane
-        "chkCrane1": "Crane 1",
-        "chkCrane2": "Crane 2",
-        "chkCHU1": "CHU 1",
-        "chkCHU2": "CHU 2",
-        
-        // Meters
-        "txt145B": "145B",
-        "txt550FV": "55FV",
-        "txt155W": "155WD",
-        "txtOthers": "Others",
-        "chkLaiwan": "Lai Wan",
-        "chkNgonshuen": "Ngon Shuen",
-        
-        // Vehicle Wash
-        "chkWash1": "Vehicle Wash 1",
-        "chkWash2": "Vehicle Wash 2",
-        "cmbCleanliness": "VW Clean ?",
-        "cmbMinutes": "Waste clearance > 30 mins? ",
-        "cmbHours": "Off-site litter > 24 hrs? ",
-        
-        // Air Monitoring
-        "cmbCurtain": "Air Curtain",
-        "chkScrubber1": "Scrubber 1",
-        "chkScrubber2": "Scrubber 2",
-        "chkScrubber3": "Scrubber 3",
-        "chkScrubber4": "Scrubber 4",
-        "chkScrubber5": "Scrubber 5",
-        "txtAcid1": "Acid Scrubber 1",
-        "txtAcid2": "Acid Scrubber 2",
-        "txtAcid4": "Acid Scrubber 4",
-        "txtAcid5": "Acid Scrubber 5",
-        "txtAlk1": "Alk Scrubber 1",
-        "txtAlk2": "Alk Scrubber 2",
-        "txtAlk3": "Alk Scrubber 3",
-        "txtAlk4": "Alk Scrubber 4",
-        "txtAlk5": "Alk Scrubber 5",
-        "txtORP1": "ORP 1",
-        "txtORP2": "ORP 2",
-        "txtORP3": "ORP 3",
-        "txtORP4": "ORP 4",
-        "txtORP5": "ORP 5",
-        "cmbBefore": "Before Treatment ",
-        "cmbAnaerobic": "Anaerobic Tanks",
-        
-        // Water Monitoring
-        "chkT300": "Aerobic Tank T300",
-        "chkT401": "Aerobic Tank T401",
-        "chkT402": "Aerobic Tank T402",
-        "chkT403": "Aerobic Tank T403",
-        "chkT404": "Aerobic Tank T404",
-        "cmbFinal": "Final Clarifer",
-        "cmbFilter": "Filter Press",
-        "cmbBiogas": "Bigas Tank",
-        "cmbPenstock": "Penstock",
-        
-        // Remarks
-        "txtRemarks1": "Remarks1",
-        "txtRemarks2": "Remarks2",
-        "txtRemarks3": "Remarks3",
-        "txtRemarks4": "Remarks 4",
-        
-        // Tank Farm
-        "cmbPLC": "PLC",
-        "cmbPreT": "Pre-Treat",
-        "cmbPenstockChamber": "Penstock",
-        "cmbAerobicS": "Status",
-        "txtAT401": "T-401",
-        "txtAT402": "T-402",
-        "txtAT403": "T-403",
-        "txtAT404": "T-404",
-        "cmbAnaerobicS": "Status",
-        "txtApH": "pH",
-        "txtATemp": "Temp",
-        "txtADO": "DO",
-        "txtABiogas": "Biogas Level",
-        "cmbPostT": "Status",
-        "cmbCent": "Centrifuge",
-        
-        // Meters
-        "txtWetsep": "Wetsep",
-        "txtMarineVessel": "Marine Vessel",
-        "txtStorm": "Storm  water",
-        "txtVWF": "VWF wastewater",
-        "txtRundown": "Rundown Screen",
-        "txt101": "FIQT -101",
-        "txt100": "FIQT -100",
-        "txt313": "FIT-313",
-        "txt312": "FIT-312",
-        "txt410": "T410",
-        "txt413": "FIT-413",
-        
-        // Environmental
-        "txtPublic": "Public",
-        "txtRoad": "Road Wash",
-        "txtMarine": "Marine",
-        "txtScrubbers": "Scrubbers",
-        "txtVWS": "VWS",
-        
-        // DO and Temp readings
-        "txt401DO": "DO                T-401",
-        "txt402DO": "DO                T-402",
-        "txt403DO": "DO                T-403",
-        "txt404DO": "DO                T-404",
-        "txt401Temp": "Temp               T-401",
-        "txt402Temp": "Temp               T-402",
-        "txt403Temp": "Temp               T-403",
-        "txt404Temp": "Temp               T-404",
-        "txt404pH": "pH             T-404",
-        
-        // Wheelstoppers & DG
-        "txtContainers": "Number of Containers Completed",
-        "chkWheelstoppers": "Wheelstopper Conditions",
-        "txtWheelstoppers": "Wheelstopper Conditions (Remarks)",
-        "cmbDG": "DG Storage",
-        "chkC6A": "Compactor  6A",
-        "txtC6A": "Compactor  6A",
-        
-        // Metadata
-        "timestamp": "Timestamp"
-    };
-
-    const dateSelect = document.getElementById('dateSelect');
-    const downloadDataBtn = document.getElementById('downloadDataBtn');
-    const statusDiv = document.getElementById('status');
-    const dataPreviewDiv = document.getElementById('dataPreview');
-    const instructionsDiv = document.getElementById('instructions');
-    
-    // Set default date to today
-    const today = new Date().toISOString().split('T')[0];
-    dateSelect.value = today;
     
     function showStatus(message, type) {
         statusDiv.textContent = message;
@@ -585,16 +348,53 @@
         }, 8000);
     }
     
-    // Convert checkbox value to checkmark
+    // Parse CSV row (handles quoted values)
+    function parseCSVRow(rowStr) {
+        const result = [];
+        let inQuotes = false;
+        let current = '';
+        
+        for (let i = 0; i < rowStr.length; i++) {
+            const char = rowStr[i];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current.trim());
+        
+        return result.map(cell => cell.replace(/^"|"$/g, ''));
+    }
+    
+    // Convert checkbox boolean to checkmark
     function formatCheckboxValue(value) {
-        if (value === true || value === 'true' || value === 'checked') {
+        if (value === true || value === 'true' || value === 'checked' || value === '✓') {
             return '✓';
         }
         return '';
     }
     
-    // Convert R2 JSON record to Print row format
-    function convertToPrintRow(record) {
+    // Convert date from DD/MM/YYYY to DD/MM/YYYY (keep as is) or handle YYYY-MM-DD
+    function formatDate(value) {
+        if (!value) return '';
+        // If already in DD/MM/YYYY format, return as is
+        if (value.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+            return value;
+        }
+        // If in YYYY-MM-DD format, convert to DD/MM/YYYY
+        if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [year, month, day] = value.split('-');
+            return `${day}/${month}/${year}`;
+        }
+        return value;
+    }
+    
+    // Convert R2 record to Excel row format
+    function convertToExcelRow(record) {
         const row = {};
         
         // Initialize all headers with empty string
@@ -602,58 +402,45 @@
             row[header] = '';
         }
         
-        // Map each field to the correct Print header
-        for (const [jsonKey, printHeader] of Object.entries(FIELD_MAPPING)) {
-            let value = record[jsonKey] || '';
+        // Map each field from R2 record to Print header
+        for (const [key, value] of Object.entries(record)) {
+            // Skip metadata and undefined fields
+            if (key === '_metadata' || key === 'undefined' || key === 'timestamp') continue;
             
-            // Format checkbox values
-            if (jsonKey.startsWith('chk')) {
-                value = formatCheckboxValue(value);
-            }
+            // Find matching header (exact match or case-insensitive)
+            let matchedHeader = PRINT_HEADERS.find(h => h === key);
             
-            // Format date from YYYY-MM-DD to DD/MM/YYYY
-            if (jsonKey === 'txtDate' && value && value.includes('-')) {
-                const [year, month, day] = value.split('-');
-                value = `${day}/${month}/${year}`;
-            }
-            
-            // Handle special case for duplicate headers (C1 appears twice, etc.)
-            // For containers, we need to handle both checkbox and text fields
-            if (printHeader === 'C1') {
-                // First C1 is checkbox, second is text - we'll combine them
-                const checkboxValue = formatCheckboxValue(record['chkC1']);
-                const textValue = record['txtC1'] || '';
-                if (checkboxValue && textValue) {
-                    value = `${checkboxValue} ${textValue}`;
-                } else if (checkboxValue) {
-                    value = checkboxValue;
-                } else if (textValue) {
-                    value = textValue;
+            if (matchedHeader) {
+                let formattedValue = value;
+                
+                // Format checkbox values
+                if (key.startsWith('WB') || key === 'C1' || key === 'C2' || key === 'MF1' || 
+                    key === 'MF2' || key === 'MF3' || key === 'MF4' || key === 'MF5' || key === 'MF6' ||
+                    key === 'Screen 1' || key === 'Screen 2' || key === 'Screen 3' ||
+                    key === 'DAF 1' || key === 'DAF 2' || key === 'Crane 1' || key === 'Crane 2' ||
+                    key === 'CHU 1' || key === 'CHU 2' || key === 'Lai Wan' || key === 'Ngon Shuen' ||
+                    key === 'Vehicle Wash 1' || key === 'Vehicle Wash 2' || key === 'Scrubber 1' ||
+                    key === 'Scrubber 2' || key === 'Scrubber 3' || key === 'Scrubber 4' || key === 'Scrubber 5' ||
+                    key === 'Aerobic Tank T300' || key === 'Aerobic Tank T401' || key === 'Aerobic Tank T402' ||
+                    key === 'Aerobic Tank T403' || key === 'Aerobic Tank T404' || key === 'Wheelstopper Conditions' ||
+                    key === 'Compactor  6A' || key === 'Inspected by EPD' || key === 'Inspected by CHEC') {
+                    formattedValue = formatCheckboxValue(value);
                 }
-            }
-            
-            // Handle Compactor 6A (C6A)
-            if (printHeader === 'Compactor  6A') {
-                const checkboxValue = formatCheckboxValue(record['chkC6A']);
-                const textValue = record['txtC6A'] || '';
-                if (checkboxValue && textValue) {
-                    value = `${checkboxValue} ${textValue}`;
-                } else if (checkboxValue) {
-                    value = checkboxValue;
-                } else if (textValue) {
-                    value = textValue;
+                
+                // Format date
+                if (key === 'Date') {
+                    formattedValue = formatDate(value);
                 }
+                
+                row[matchedHeader] = formattedValue;
             }
-            
-            row[printHeader] = value;
         }
         
         return row;
     }
     
-    // Download Inspection Data from R2
+    // Download Inspection Data
     async function downloadData() {
-        const station = STATION_ID;
         const date = dateSelect.value;
         
         if (!date) {
@@ -666,7 +453,9 @@
         dataPreviewDiv.classList.remove('show');
         
         try {
-            // Fetch data from Worker
+            const station = 'wkts';
+            
+            // Fetch data from Worker - using the list endpoint
             const response = await fetch(`${WORKER_URL}/api/get-data-csv`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -690,26 +479,37 @@
             
             const result = await response.json();
             
-            if (!result.success) {
-                throw new Error(result.error || 'Failed to fetch data');
-            }
+            // Handle different response formats
+            let records = [];
             
-            const records = result.data || [];
+            if (result.success && result.data) {
+                // Format: { success: true, data: [...] }
+                records = result.data;
+            } else if (Array.isArray(result)) {
+                // Format: direct array
+                records = result;
+            } else if (result.records) {
+                // Format: { records: [...] }
+                records = result.records;
+            } else {
+                // Try to use result as is if it's an array
+                records = Array.isArray(result) ? result : [];
+            }
             
             if (!records || records.length === 0) {
                 throw new Error(`No inspection records found for ${date}`);
             }
             
             console.log(`Found ${records.length} records`);
-            console.log(`Total Print headers: ${PRINT_HEADERS.length}`);
+            console.log('First record keys:', Object.keys(records[0]));
             
-            // Convert each record to Print row format
-            const printRows = records.map(record => convertToPrintRow(record));
+            // Convert each record to Excel row format
+            const excelRows = records.map(record => convertToExcelRow(record));
             
-            // Build worksheet data with Print headers
+            // Build worksheet data
             const worksheetData = [PRINT_HEADERS];
             
-            for (const row of printRows) {
+            for (const row of excelRows) {
                 const rowData = PRINT_HEADERS.map(header => row[header] || '');
                 worksheetData.push(rowData);
             }
@@ -718,7 +518,7 @@
             const workbook = XLSX.utils.book_new();
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
             
-            // Auto-size columns for better readability
+            // Auto-size columns
             worksheet['!cols'] = PRINT_HEADERS.map(header => ({ 
                 wch: Math.min(header.length + 3, 20) 
             }));
@@ -737,8 +537,8 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            // Show preview of first few records
-            const previewRecords = printRows.slice(0, 3);
+            // Show preview
+            const previewRecords = excelRows.slice(0, 3);
             const previewHtml = previewRecords.map((row, idx) => {
                 const sampleFields = ['Date', 'Inspected By', 'Time', 'Weather'];
                 const sampleData = sampleFields.map(f => `${f}: ${row[f] || '-'}`).join(' | ');
@@ -746,23 +546,19 @@
             }).join('');
             
             dataPreviewDiv.innerHTML = `
-                <strong>📄 Data Preview (first ${Math.min(printRows.length, 3)} records):</strong><br>
+                <strong>📄 Data Preview (first ${Math.min(excelRows.length, 3)} records):</strong><br>
                 ${previewHtml}
                 <div class="stats" style="margin-top: 10px;">
                     <strong>📊 Statistics:</strong><br>
-                    • Total records: <strong>${printRows.length}</strong><br>
+                    • Total records: <strong>${excelRows.length}</strong><br>
                     • Total columns: <strong>${PRINT_HEADERS.length}</strong><br>
                     • Date: <strong>${date}</strong><br>
-                    • Headers match Print sheet: <strong style="color: #059669;">✓ Yes (${PRINT_HEADERS.length} columns)</strong>
-                </div>
-                <div class="header-count">
-                    💡 The Excel file has the exact same ${PRINT_HEADERS.length} headers as your Print sheet.<br>
-                    Simply copy cells A2 through the end (Ctrl+Shift+End) and paste into your Print sheet at row 6.
+                    • Headers match Print sheet: <strong style="color: #059669;">✓ Yes</strong>
                 </div>
             `;
             dataPreviewDiv.classList.add('show');
             
-            showStatus(`✅ Success! ${printRows.length} record(s) downloaded. Headers match your Print sheet exactly!`, 'success');
+            showStatus(`✅ Success! ${excelRows.length} record(s) downloaded. Ready to copy into your template.`, 'success');
             instructionsDiv.classList.add('show');
             
         } catch (error) {
@@ -781,9 +577,6 @@
     setTimeout(() => {
         instructionsDiv.classList.add('show');
     }, 500);
-    
-    console.log(`Loaded ${PRINT_HEADERS.length} Print headers`);
-    console.log(`Loaded ${Object.keys(FIELD_MAPPING).length} field mappings`);
 </script>
 </body>
 </html>
