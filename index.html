@@ -384,7 +384,7 @@
         }
     }
     
-    // Main: Download Inspection Data
+    // Main: Download Inspection Data (ALL columns mapped)
     async function downloadData() {
         const station = stationSelect.value;
         const date = dateSelect.value;
@@ -417,49 +417,18 @@
             const csvData = await response.text();
             
             const lines = csvData.trim().split('\n');
-            const headers = parseCSVRow(lines[0]);
-            const dataRows = lines.slice(1);
+            
+            // Parse ALL headers from CSV (full 154 columns)
+            const csvHeaders = parseCSVRow(lines[0]);
             
             const workbook = XLSX.utils.book_new();
             
-            // Complete headers matching your Print sheet
-            const fullHeaders = [
-                'Date', 'Inspected By', 'Time', 'Weather', 'WB No.1', 'WB No.2', 'WB No.3', 'WB No.4',
-                'CCTV/ Recording System', 'Weight Display correctness', 'Vehicle No.', 'Type/ Origin',
-                'Permitted waste?', 'Any off-site queuing?', 'Inspected by EPD', 'Inspected by CHEC',
-                'Vehicle No.', 'Waste Type', 'Permitted Waste', 'Traffic control signal', 'CCTV system',
-                'Filter Press', 'C1', 'C1', 'C2', 'C2', 'MF1', 'C3', 'C3', 'MF2', 'C4', 'C4', 'MF3',
-                'C5', 'C5', 'MF4', 'C6', 'C6', 'MF5', 'C7', 'C7', 'MF6', 'C8', 'C8', 'C9', 'C9', 'C10', 'C10',
-                'Screen 1', 'Screen 2', 'Screen 3', '1A', '1B', '2A', '2B', 'DAF 1', 'DAF 2', 'Area Cleaned',
-                'Crane 1', 'Crane 2', 'CHU 1', 'CHU 2', '145B', '55FV', '155WD', 'Others', 'Lai Wan', 'Ngon Shuen',
-                'Vehicle Wash 1', 'Vehicle Wash 2', 'Vehicle Wash 3', 'VW Clean ?', 'Waste clearance > 30 mins?',
-                'Off-site litter > 24 hrs?', 'Air Curtain', 'Scrubber 1', 'Scrubber 2', 'Scrubber 3', 'Scrubber 4',
-                'Scrubber 5', 'Acid Scrubber 1', 'Acid Scrubber 2', 'Acid Scrubber 4', 'Acid Scrubber 5',
-                'Alk Scrubber 1', 'Alk Scrubber 2', 'Alk Scrubber 3', 'Alk Scrubber 4', 'Alk Scrubber 5',
-                'ORP 1', 'ORP 2', 'ORP 3', 'ORP 4', 'ORP 5', 'Before Treatment', 'Anaerobic Tanks',
-                'Aerobic Tank T300', 'Aerobic Tank T401', 'Aerobic Tank T402', 'Aerobic Tank T403', 'Aerobic Tank T404',
-                'Final Clarifer', 'Filter Press', 'Bigas Tank', 'Penstock', 'Remarks1', 'Remarks2', 'Remarks3', 'Remarks 4',
-                'PLC', 'Pre-Treat', 'Penstock', 'Status', 'T-401', 'T-402', 'T-403', 'T-404', 'Status', 'pH', 'Temp', 'DO',
-                'Biogas Level', 'Status', 'Centrifuge', 'Wetsep', 'Marine Vessel', 'Storm water', 'VWF wastewater',
-                'Rundown Screen', 'FIQT -101', 'FIQT -100', 'FIT-313', 'FIT-312', 'T410', 'FIT-413', 'Public', 'Road Wash',
-                'Marine', 'Scrubbers', 'VWS', 'DO T-401', 'DO T-402', 'DO T-403', 'DO T-404', 'Temp T-401', 'Temp T-402',
-                'Temp T-403', 'Temp T-404', 'pH T-404', 'Number of Containers Completed', 'Wheelstopper Conditions',
-                'Wheelstopper Conditions (Remarks)', 'DG Storage', 'Compactor 6A'
-            ];
+            // Use the headers directly from CSV (they already match Print sheet)
+            const worksheetData = [csvHeaders];
             
-            const worksheetData = [fullHeaders];
-            
-            for (const row of dataRows) {
-                const parsedRow = parseCSVRow(row);
-                const fullRow = [];
-                
-                for (let i = 0; i < 21; i++) {
-                    fullRow[i] = parsedRow[i] || '';
-                }
-                for (let i = 21; i < fullHeaders.length; i++) {
-                    fullRow[i] = '';
-                }
-                worksheetData.push(fullRow);
+            for (let i = 1; i < lines.length; i++) {
+                const parsedRow = parseCSVRow(lines[i]);
+                worksheetData.push(parsedRow);
             }
             
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -476,13 +445,15 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
+            // Show preview of first few rows
             const previewLines = lines.slice(0, 6);
             dataPreviewDiv.innerHTML = `
                 <strong>📄 Data Preview (first ${Math.min(lines.length, 6)} rows):</strong><br>
-                <code>${previewLines.join('<br>')}</code><br>
+                <code>${previewLines.join('<br>').substring(0, 500)}...</code><br>
                 ${lines.length > 6 ? '<span style="color:#666;">... and more rows</span>' : ''}
                 <hr>
-                <strong>Total records: ${lines.length - 1}</strong>
+                <strong>Total records: ${lines.length - 1}</strong><br>
+                <strong>Total columns: ${csvHeaders.length}</strong>
             `;
             dataPreviewDiv.classList.add('show');
             
