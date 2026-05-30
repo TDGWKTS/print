@@ -332,9 +332,6 @@
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
     
     // ========== STATION-SPECIFIC HEADERS ==========
-    // Each station has its own headers based on its Print sheet row 5
-    // You need to fill these in based on your actual Excel templates
-    
     const stationHeaders = {
         wkts: [
             "Date", "Inspected By", "Time", "Weather", 
@@ -382,30 +379,267 @@
             "Status C6A", "C6A"
         ],
         nwnt: [
-            // Add NWNT headers here based on your NWNT Print sheet row 5
-            "Date", "Inspected By", "Time", "Weather"
-            // ... more headers
+            "Date", "Inspected By", "Time", "Weather",
+            "WB No.1", "WB No.2", "WB No.3", "WB No.4",
+            "CCTV/ Recording System", "Weight Display correctness",
+            "Bridge Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?",
+            "Inspected by EPD", "Inspected by CHEC",
+            "Tipping Vehicle No.", "Waste Type", "Permitted Waste",
+            "Traffic control signal", "CCTV system",
+            "Filter Press",
+            "C1", "Container No. (C1)", "C2", "Container No. (C2)",
+            "C3", "Container No. (C3)", "C4", "Container No. (C4)",
+            "C5", "Container No. (C5)", "C6", "Container No. (C6)",
+            "C7", "Container No. (C7)", "C8", "Container No. (C8)",
+            "Screen 1", "Screen 2", "Screen 3",
+            "Tank 1A", "Tank 1B", "Tank 2A", "Tank 2B",
+            "DAF 1", "DAF 2", "GTW Area",
+            "Crane 1", "Crane 2", "CHU 1", "CHU 2",
+            "145B", "550FV", "155WV", "Others",
+            "Lai Wan", "Ngon Shuen",
+            "Vehicle Wash 1", "Vehicle Wash 2",
+            "Cleanliness", ">30 mins", "Offsite >24 hrs",
+            "Air Curtain",
+            "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5",
+            "Acid Stage 1", "Acid Stage 2", "Acid Stage 4", "Acid Stage 5",
+            "Alk Stage 1", "Alk Stage 2", "Alk Stage 3", "Alk Stage 4", "Alk Stage 5",
+            "ORP Range 1", "ORP Range 2", "ORP Range 3", "ORP Range 4", "ORP Range 5",
+            "Before Treatment", "Anaerobic Tanks",
+            "T300", "T401", "T402", "T403", "T404",
+            "Final Clarifier", "Filter Press", "Biogas Tank", "Penstock",
+            "Remarks 1", "Remarks 2", "Remarks 3", "Remarks 4",
+            "PLC Condition", "Pre Treatment", "Penstock Status", "AerobicS",
+            "AT401", "AT402", "AT403", "AT404",
+            "AnaerobicS", "ApH", "ATemp", "ADO", "ABiogas",
+            "Post-Treatment", "Centrifuge", "Wetsep", "Marine Vessel", "Storm", "VWF", "Rundown",
+            "101", "100", "313", "312", "410", "413",
+            "Public", "Road", "Marine", "Scrubbers", "VWS",
+            "401 DO", "402 DO", "403 DO", "404 DO",
+            "401 Temp", "402 Temp", "403 Temp", "404 Temp", "404 pH",
+            "Number of Containers Completed", "Wheelstopper Conditions",
+            "Wheelstopper Conditions (Remarks)", "DG Storage", "C6A", "Container No. (C6A)"
         ],
         iets: [
-            // Add IETS headers here
+            "Date", "Inspected By", "Time", "Weather AM", "Weather PM", "Day",
+            "1.1 Weighbridge area cleanliness", "1.2 Traffic smoothness", "1.3 Weighbridge display / Traffic light (In)",
+            "1.4 Weighbridge display / Traffic light (Out)", "1.5 Computer / Printer", "1.6 Operator / Lighting",
+            "1.7 CCTV system", "1.8 Score Board",
+            "2.1 Pushpit Indicator / Traffic light", "2.2 Access cleanliness", "2.3 Traffic smoothness", "2.4 Vehicle wash plant",
+            "3.1 Traffic smoothness", "3.2 Tipping hall cleanliness", "3.3 Traffic light / Lighting", "3.4 Channel no. 1 / no. 2",
+            "3.5 Spray / Dust", "3.6 Ventilation fan / Odour", "3.7 Manual disposal Container no.", "3.8 Worker", "3.9 Wheel stopper",
+            "4.1 Operator / CCTV system", "4.2 Odour / Dust", "4.3 Air conditioning / Lighting",
+            "5.1 Compactor hall cleanliness", "5.2 Odour / Dust", "5.3 Lighting / Traffic smoothness", "5.4 Tractor / Trailer", "5.5 Worker",
+            "6.1 Lighting / Odour", "6.2 Sump pit / Balancing tank", "6.3 Run-down screen / Sump pump", "6.4 Oil skimmer / CEPT",
+            "6.5 Sludge holding tank / Filter press", "6.6 Air blower unit no. 1 / 2 / 3", "6.7 SBR 1 / SBR 2 (Aeration/Settling/Idle)",
+            "6.8 Effluent tank / pH meter", "6.9 Effluent discharged meter (readings)",
+            "7.1 Container access cleanliness", "7.2 Container stockpile", "7.3 Container handling unit (CHU)", "7.4 Lighting / Odour",
+            "7.5 No. of Quality Checking of Waste Container (LCF / QCF)",
+            "8.1 Vessel name", "8.2 Berth area cleanliness", "8.3 Traffic smoothness",
+            "9.1 Ramp cleanliness / Lighting", "9.2 Traffic smoothness",
+            "10.1 Road sweeper cleaning streets", "10.2 Road sweeper cleaning site area",
+            "Start Time", "End Time", "Supervisor", "Technician", "Mechanic / Electrician", "Pushpit/Compactor operator",
+            "Weighbridge operator", "Tractor driver", "Cleaner", "Labourer", "Compactor worker", "Semiskilled worker",
+            "PART II - Weighbridge Operation Checked by", "PART II - Daily waste transaction record checked",
+            "PART II - Weighbridge Time", "PART II - Overall system normal", "PART II - Weighbridge Remark",
+            "PART II - Vehicle Turnaround Time within contract", "PART II - Queuing off-site observed",
+            "PART II - Staff check record with electronic transaction", "PART II - Turnaround Remark",
+            "PART II - Waste Inspection Inspected by", "PART II - Waste Inspection Time/Location", "PART II - Waste Remark",
+            "PART II - Tipping Inspected by", "PART II - Waste handling properly", "PART II - Tipping Time/Location", "PART II - Tipping Remark",
+            "PART II - Leakage Recorded by", "PART II - Leakage Time/Location", "PART II - Leakage Container nos.", "PART II - Leakage Caused by", "PART II - Leakage Remark",
+            "PART II - Machinery Inspected by", "PART II - Machinery Time/Location", "PART II - Machinery Remark",
+            "PART II - FSP Conducted by", "PART II - FSP Witnessed by", "PART II - FSP Time", "PART II - FSP Sampling from", "PART II - FSP Remark",
+            "PART II - Gas Conducted by", "PART II - Gas Witnessed by", "PART II - Gas Time", "PART II - Gas Sampling Location", "PART II - Gas Remark",
+            "PART II - Noise Conducted by", "PART II - Noise Witnessed by", "PART II - Noise Measuring Point",
+            "PART II - Noise Time Day", "PART II - Noise Calibration Day", "PART II - Noise Time Night", "PART II - Noise Calibration Night", "PART II - Noise Remark",
+            "PART II - Water Conducted by", "PART II - Water Witnessed by", "PART II - Water Guidelines followed", "PART II - Water Details", "PART II - Water Remark",
+            "PART II - Sludge Conducted by", "PART II - Sludge Witnessed by", "PART II - Sludge Time", "PART II - Sludge Remark",
+            "PART II - Pest Conducted by", "PART II - Pest Witnessed by", "PART II - Pest Time", "PART II - Pest Treatment", "PART II - Pest Remark",
+            "PART II - Smoke Witnessed by", "PART II - Smoke Details", "PART II - Smoke Remark",
+            "Timestamp"
         ],
         iwts: [
-            // Add IWTS headers here
+            "Date", "Inspected By", "Time", "Weather AM", "Weather PM",
+            "1.1 Weighbridge area cleanliness", "1.2 Traffic smoothness / Drop Bar",
+            "1.3 Weighbridge display / Traffic light (In)", "1.4 Weighbridge display / Traffic light (Out)",
+            "1.5 Computer / Printer", "1.6 Operator / Lighting", "1.7 CCTV system",
+            "2.1 Channel indicator / Traffic light", "2.2 RCV access cleanliness / Roller Shutter",
+            "2.3 Traffic smoothness / Drop Bar", "2.4 Air Curtain / Atomising system",
+            "3.1 Water spraying / brushing", "3.2 Drop Bar / Traffic Light",
+            "4.1 Traffic smoothness", "4.2 Tipping hall cleanliness / Lighting",
+            "4.3 Traffic light / Channel no.", "4.4 Spray / Dust", "4.5 Ventilation fan / Odour",
+            "4.6 Wheel stopper condition / maintenance", "4.7 Infrared heat detection / Overhead detection",
+            "4.8 Dust and odour suppressing system", "5.1 Operator", "5.2 Odour / Dust",
+            "5.3 Air conditioning / Lighting", "6.1 Unit 1 / Unit 2", "6.2 Air scrubber cleanliness",
+            "6.3 Odour / Dust", "6.4 Circulation system / Chemicals", "7.1 Compactor hall cleanliness",
+            "7.2 Odour / Dust", "7.3 Lighting / Traffic smoothness", "7.4 Tractor / Trailer",
+            "8.1.1 Main Collection Tank - Lighting / Odour", "8.1.2 Main Collection Tank - Run-down screen",
+            "8.2.1 Treatment Effluent Tank - Lighting / Odour", "8.3.1 Sludge Holding Tank - Lighting / Odour",
+            "8.4.1 SBR Tank - Lighting / Odour", "8.4.2 Sequencing batch reactor (SBR) on/off",
+            "8.4.3 Recirculation pump", "8.5.1 Filter Press Room - Odour / Dust / Ventilation fan",
+            "9.1 Container access cleanliness / Roller shutter", "9.2 Lighting / Odour",
+            "9.3 Air Curtain / Atomising system", "10.1 Vessel name", "10.2 Berth area cleanliness / Atomising System",
+            "10.3 Traffic smoothness", "10.4 Container stockpile", "10.5 Container handling unit (CHU)",
+            "11.1 Spiral ramp cleanliness / Lighting", "11.2 Traffic smoothness", "11.3 Auto Cleaning System",
+            "12.1 Road sweeper cleaning streets", "12.2 Road sweeper cleaning site area", "12.3 Odour Monitoring System",
+            "Non-operation hours (2330-0730)", "Ventilation fans", "Mainfan NEF 2 (Hz)", "Mainfan NEF 3 (Hz)",
+            "Tipping Hall (NSF 1)", "Dry Scrubber A", "Dry Scrubber B", "Dry Scrubber C", "Compactor Hall (NSF 4)",
+            "WWTP EEF 13", "WWTP EEF 14 (standby)", "WWTP ESF 15", "Shift Start Time", "Shift End Time",
+            "Supervisor", "Mobile plant operator", "Station operator", "Maintenance technician",
+            "Semiskilled worker", "WWTP operator", "Labour", "Livefloor operator", "Weighbridge operator",
+            "PART II - Weighbridge Operation Checked by", "PART II - Daily waste transaction record checked",
+            "PART II - Weighbridge Time", "PART II - Overall system normal", "PART II - Weighbridge Remark",
+            "PART II - Vehicle Turnaround Time within contract", "PART II - Queuing off-site observed",
+            "PART II - Turnaround Remark", "PART II - Waste Inspection Inspected by",
+            "PART II - Waste Inspection Vehicle No.", "PART II - Waste Inspection Time / Location",
+            "PART II - Permitted Waste", "PART II - Tipping Inspected by", "PART II - Waste handling properly",
+            "PART II - Tipping Time / Location", "PART II - Tipping Remark", "PART II - Leakage Recorded by",
+            "PART II - Leakage Time / Location", "PART II - Leakage Caused by", "PART II - Leakage Remark",
+            "PART II - Vehicle Wash Inspected by", "PART II - Vehicle properly cleaned",
+            "PART II - Vehicle Wash Time", "PART II - Vehicle Wash Vehicle No.",
+            "PART II - Machinery Inspected by", "PART II - Machinery Time / Location", "PART II - Machinery Remark",
+            "PART II - Litter Inspected by", "PART II - Litter Time / Location", "PART II - Litter Remark",
+            "PART II - Air Monitoring Conducted by", "PART II - Air Sampling from", "PART II - Air Witnessed by",
+            "PART II - Air Time", "PART II - Air Remark", "PART II - Noise Conducted by",
+            "PART II - Noise Measuring Point", "PART II - Noise Witnessed by",
+            "PART II - Sound Level Meter Calibration", "PART II - Noise Time", "PART II - Noise Remark",
+            "PART II - Water Sampling Conducted by", "PART II - Sampling guidelines followed",
+            "PART II - Water Witnessed by", "PART II - Water Sampling Point", "PART II - Water Time",
+            "PART II - Water Remark", "PART II - Sludge Conducted by", "PART II - Sludge Witnessed by",
+            "PART II - Sludge Time", "PART II - Sludge Remark", "PART II - Pest Control Conducted by",
+            "PART II - Pest Control Witnessed by", "PART II - Pest Control Time", "PART II - Pest Control Remark",
+            "Timestamp"
         ],
         stts: [
-            // Add STTS headers here
+            "Inspection Date", "Inspected By", "Shift / Time", "Weather", "Checked By",
+            "1. Industrial Water Meter Reading", "2. Waste Water Discharge Flow Meter Reading",
+            "3. Weighbridge CPU", "4. Status of Weighbridge No.1", "4. Status of Weighbridge No.2", "4. Status of Weighbridge No.3",
+            "5. Drop Barrier / Traffic Light No.1", "5. Drop Barrier / Traffic Light No.2", "5. Drop Barrier / Traffic Light No.3",
+            "6. CCTV No.1 (IN/OUT)", "6. CCTV No.2 (IN/OUT)", "6. CCTV No.3 (IN/OUT)",
+            "7. No. of Weighbridge Operator", "8. VOID or MANUAL ticket", "9. Water Spraying / Brushing",
+            "10. Drop Barrier / Traffic Light", "11. Recycling Water System Room", "12. Live floor No.1", "12. Live floor No.2", "12. Live floor No.3",
+            "13. Ventilation Fan No.1", "13. Ventilation Fan No.2", "14A. No. of Control Operator", "14B. No. of Tipper Hall Assistant",
+            "15. Lighting", "16. Traffic Light Indicator (Entrance)", "16A. Unloading Bays (Front / Rear)", "17. Water Spray nozzles",
+            "18. Bulky Waste Shredder", "19. Cleanliness of tipping area", "20. Final Scrubber No.1", "20. Final Scrubber No.2",
+            "20A. Data Logger (Final Scrubber)", "21. Main Fan No.1", "21. Main Fan No.2", "21. Main Fan No.3",
+            "21A. Data Logger (Main Fan)", "22. Compactor No.1", "22. Compactor No.2", "22. Compactor No.3",
+            "23. Chemicals Waste Storage (Properly stored)", "23A. Chemicals Waste Storage (Any spillage)", "24. Lighting",
+            "25. Filter Press Unit", "26. No. of Compactor Operator", "26B. No. of Compactor Hall Assistant",
+            "27. Status of Aeration Tank SBR1", "27. Status of Aeration Tank SBR2", "28. Venturi Scrubber Pump P1",
+            "28. Venturi Scrubber Pump P2", "29. Filter Press Unit", "30. Lighting", "31. Buffer Tank with Wastewater",
+            "32. Discharge of Wastewater", "33. Data Logger / Panel Display", "34. Record of Loaded Trailers - Compactor Hall",
+            "35. Record of Loaded Trailers - Open Area", "36. Malpractice - By-pass Weighbridge", "37. Malpractice - By-pass Vehicle Wash",
+            "38. Malpractice - Fast Speed", "39. Malpractice - Leachate Dripping", "40. CCTV - Main Entrance & Exit",
+            "41. CCTV - Open Area around Weighbridges", "42. CCTV - Back Yard Area", "43. CCTV - Wastewater Treatment Plant",
+            "44. CCTV - Compactor Hall", "45. CCTV - Workshop", "46. CCTV - Tipping Hall",
+            "OEP-1: Vehicle Turnaround Time > 25 min", "OEP-2: Queuing of RCVs outside the Station",
+            "OEP-3: Vehicle Washing House", "OEP-4: Spillage of Refuse at any External Location & Not Properly Removed within 30 min",
+            "OEP-5: Spillage of Refuse/Leakage of Leachate from Trailer", "OEP-6: Abnormal Noise", "OEP-7: Waste Inspection",
+            "OEP-8: Cleansing of the Cleansing Area (4 times per day)", "OEP-9: No. of Highway Tractor (Operate / Idle)",
+            "OEP-10: Highway Tractor (ST#) in Maintenance", "OEP-11: No. of Yard Tractor (Operate / Maintenance / Idle)",
+            "OEP-12: Trailer (C#) in Maintenance", "OEP-13: Cleanliness of Tractors and Trailers Body",
+            "OEP-14: Bobcat / Sweeper / Scrubber Drier", "OEP-15: No. of backhoe loader (JCB) operate at tipping hall",
+            "OEP-16: Storm Drain Channel / Catchpit Condition", "OEP-17: Wastewater Sample Lab", "OEP-17: Wastewater Sample Time",
+            "OEP-18: Storm Water Sample Lab", "OEP-18: Storm Water Sample Time", "OEP-19: Influent Sample Time",
+            "OEP-20: Sludge Cake Lab", "OEP-20: Sludge Cake Time", "OEP-21: RSP Time", "OEP-22: Noise Measurement Time",
+            "OEP-23: CO & NO2 Time", "OEP-24: Odour Patrol Time", "OEP-24: Mal-odour detected (0-4)",
+            "OEP-25: Pest/Rodent Breeding Places (Time)", "OEP-26: Pest/Rodent Control Fogging Time",
+            "OEP-27: Black Smoke Time", "OEP-28: Operation Manager", "OEP-29: Officer / Guest Visited STTS",
+            "RCV Vehicle No(s).", "V Type", "Waste Type", "TICKET NO.", "Container Cleaned", "Spot Check Remarks",
+            "General Remarks", "Timestamp"
         ],
         oitf: [
-            // Add OITF headers here
+            "Date", "Inspected By", "Time", "Weather",
+            "WB No.1", "WB No.2", "WB No.3", "WB No.4",
+            "CCTV/ Recording System", "Weight Display correctness",
+            "Bridge Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?",
+            "Inspected by EPD", "Inspected by CHEC",
+            "Tipping Vehicle No.", "Waste Type", "Permitted Waste",
+            "Traffic control signal", "CCTV system",
+            "Filter Press",
+            "C1", "Container No. (C1)", "C2", "Container No. (C2)",
+            "C3", "Container No. (C3)", "C4", "Container No. (C4)",
+            "C5", "Container No. (C5)", "C6", "Container No. (C6)",
+            "C7", "Container No. (C7)", "C8", "Container No. (C8)",
+            "Screen 1", "Screen 2", "Screen 3",
+            "Tank 1A", "Tank 1B", "Tank 2A", "Tank 2B",
+            "DAF 1", "DAF 2", "GTW Area",
+            "Crane 1", "Crane 2", "CHU 1", "CHU 2",
+            "145B", "550FV", "155WV", "Others",
+            "Lai Wan", "Ngon Shuen",
+            "Vehicle Wash 1", "Vehicle Wash 2",
+            "Cleanliness", ">30 mins", "Offsite >24 hrs",
+            "Air Curtain",
+            "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5",
+            "Acid Stage 1", "Acid Stage 2", "Acid Stage 4", "Acid Stage 5",
+            "Alk Stage 1", "Alk Stage 2", "Alk Stage 3", "Alk Stage 4", "Alk Stage 5",
+            "ORP Range 1", "ORP Range 2", "ORP Range 3", "ORP Range 4", "ORP Range 5",
+            "Before Treatment", "Anaerobic Tanks",
+            "T300", "T401", "T402", "T403", "T404",
+            "Final Clarifier", "Filter Press", "Biogas Tank", "Penstock",
+            "Remarks 1", "Remarks 2", "Remarks 3", "Remarks 4",
+            "PLC Condition", "Pre Treatment", "Penstock Status", "AerobicS",
+            "AT401", "AT402", "AT403", "AT404",
+            "AnaerobicS", "ApH", "ATemp", "ADO", "ABiogas",
+            "Post-Treatment", "Centrifuge", "Wetsep", "Marine Vessel", "Storm", "VWF", "Rundown",
+            "101", "100", "313", "312", "410", "413",
+            "Public", "Road", "Marine", "Scrubbers", "VWS",
+            "401 DO", "402 DO", "403 DO", "404 DO",
+            "401 Temp", "402 Temp", "403 Temp", "404 Temp", "404 pH",
+            "Number of Containers Completed", "Wheelstopper Conditions",
+            "Wheelstopper Conditions (Remarks)", "DG Storage", "C6A", "Container No. (C6A)"
         ],
         nlts: [
-            // Add NLTS headers here
+            "Date", "Inspected By", "Time", "Day", "Weather AM", "Weather PM", "Typhoon No.", "Typhoon Hoisted On", "Rainstorm Black Issued",
+            "A1. Weighbridge (1/2)", "A2. Traffic Light / Display", "A3. Computer System (1/2)", "A4. CCTV / Video Record System",
+            "A5. Cancel Ticket", "A5. Amended Ticket", "A5. Manual Ticket", "A6. Weighbridge Cleanliness",
+            "B1. Vehicle Wash / Recycle Water Plant", "B2. Traffic Light / Malodour Identify",
+            "C1. Traffic light Indicator / Lighting intensity", "C2. Water Nozzles / Lighting devices", "C3. Ventilation",
+            "C4. Air Scrubber 1", "C4. Air Scrubber 2", "C4. Air Scrubber 3", "C4. Air Scrubber 4",
+            "C5. Bulky Waste Disposal Area", "C6. Moving Floors (1/2/3/4)", "C7. Wheel Stopper", "C8. Unloading activity",
+            "C9. Manpower", "C10. Cleanliness",
+            "D1. CCTV System / PA System", "D2. Manpower",
+            "E1. Compactors (1/2/3/4)", "E2. Chemical Waste Compliance", "E3. Cleanliness",
+            "F1. Lighting intensity", "F2. Marine Vessels Docked", "F2. Left before", "F2. Return before",
+            "F3. Loaded Container for Overnight Storage", "F4. Cleanliness",
+            "G1. Cleanliness",
+            "H1. Container under repair", "H1. Container complied with quality check",
+            "I1. Small Loader XCMG XC7-SR07", "I2. Backhoe Loader SHANMON 388 (SHAN1/SHAN2)", "I3. Road Sweeper ZC6456",
+            "I4. Container Handling Unit (CHU1/CHU2)", "I5. Yard Tractor Terberg (YT1/YT2/YT3)", "I6. Container Trailer (NLT 01-05)",
+            "I7. Any black smoke generated", "Supervisor", "Driver", "Labour", "Weighbridge Operator", "Maintenance", "WWTP Operator",
+            "Record of refuse trapped at container doors", "Record of leachate dripping containers",
+            "Cleaning of streets by", "Cleanliness condition along streets", "If poor, state location",
+            "Any blockage of surface channel", "If Y, state location",
+            "OD1 - Intensity", "OD2 - Intensity", "OD3 - Intensity", "OD4 - Intensity", "OD5 - Intensity",
+            "Wind direction", "Odour Weather",
+            "K1. Off Site Litter Control Cleanliness",
+            "L1. Any WCVs queuing outside", "L1. Max. No.", "L1. Time Period",
+            "L2. Any WCVs broken down", "L2. Vehicle No.", "L2. Time Period",
+            "L3. Random waste inspection by Contractor", "L3. Vehicle No.",
+            "M1. Air-NO2, CO Location", "M1. Air-NO2, CO Time",
+            "M2. Noise Level Location", "M2. Noise Level Time",
+            "M3. Odour patrol by Contractor (Done by)",
+            "N1. SBR1 Time", "N1. SBR1 Qty (L)", "N1. SBR2 Time", "N1. SBR2 Qty (L)",
+            "N1. Storm Time", "N1. Storm Qty (L)", "N1. Sludge Time", "N1. Sludge Qty (g)",
+            "N1. Foul Time", "N1. Foul Qty (L)",
+            "O1. Fine Screen / Distribution Tank",
+            "O2. SBR1 Status", "O2. SBR1 pH", "O2. SBR1 DO", "O2. SBR1 TSS",
+            "O3. SBR2 Status", "O3. SBR2 pH", "O3. SBR2 DO", "O3. SBR2 TSS",
+            "O4. Sludge Conditioning / Thickening Tank", "O5. Filter Press",
+            "O6. Penstock Chamber", "O6. If manual closed - Reasons", "O6. If manual closed - Time Period",
+            "O7. Flow meter reading AM (m³)", "O7. Flow meter reading PM (m³)", "O7. Flow meter reading Discharged (m³)",
+            "O8. Malodour Identify / Ventilation", "O9. Cleanliness",
+            "O10. Gas Detectors - Hydrogen Sulphide", "O10. Gas Detectors - Carbon Monoxide", "O10. Gas Detectors - Ammonia",
+            "O10. Methane CH1", "O10. Methane CH2", "O10. Methane CH3",
+            "P) Vehicle No.", "P) Time", "P) Source", "P) Classified", "P) Officer",
+            "Diary - CCTV video playback checked by", "Diary - CCTV video playback date",
+            "Diary - RCV Time in (hrs)", "Diary - RCV Gross time (hrs)", "Diary - RCV Tare time (hrs)",
+            "Diary - RCV Time left (hrs)", "Diary - RCV Total time (mins)",
+            "Diary - Remarks / Additional Notes",
+            "Timestamp"
         ]
     };
     
     // ========== STATION-SPECIFIC FIELD TO COLUMN MAPPING ==========
-    // Maps R2 JSON field names to Excel column indices
-    
     const stationFieldMap = {
         wkts: {
             "Date": 0, "Inspected By": 1, "Time": 2, "Weather": 3,
@@ -454,24 +688,12 @@
             "DG Storage": 152,
             "Status C6A": 153, "C6A": 154
         },
-        nwnt: {
-            // Add NWNT field mapping here
-        },
-        iets: {
-            // Add IETS field mapping here
-        },
-        iwts: {
-            // Add IWTS field mapping here
-        },
-        stts: {
-            // Add STTS field mapping here
-        },
-        oitf: {
-            // Add OITF field mapping here
-        },
-        nlts: {
-            // Add NLTS field mapping here
-        }
+        nwnt: {},
+        iets: {},
+        iwts: {},
+        stts: {},
+        oitf: {},
+        nlts: {}
     };
     
     const stationSelect = document.getElementById('stationSelect');
@@ -495,53 +717,52 @@
     }
     
     // Download Template from R2
-async function downloadTemplate() {
-    const stationId = stationSelect.value;
-    
-    if (!stationId) {
-        showStatus('Please select a station', 'error');
-        return;
-    }
-    
-    downloadTemplateBtn.disabled = true;
-    downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading...';
-    
-    try {
-        const response = await fetch(`${WORKER_URL}/api/get-template?station=${stationId}`);
+    async function downloadTemplate() {
+        const stationId = stationSelect.value;
         
-        if (!response.ok) {
-            throw new Error(`Template not found for ${stationId.toUpperCase()}`);
+        if (!stationId) {
+            showStatus('Please select a station', 'error');
+            return;
         }
         
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
+        downloadTemplateBtn.disabled = true;
+        downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading...';
         
-        // Get filename from Content-Disposition header
-        const contentDisposition = response.headers.get('Content-Disposition');
-        let filename = `${stationId.toUpperCase()}_Master_Template.xlsm`;
-        if (contentDisposition) {
-            const match = contentDisposition.match(/filename="?([^"]+)"?/);
-            if (match) filename = match[1];
+        try {
+            const response = await fetch(`${WORKER_URL}/api/get-template?station=${stationId}`);
+            
+            if (!response.ok) {
+                throw new Error(`Template not found for ${stationId.toUpperCase()}`);
+            }
+            
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `${stationId.toUpperCase()}_Master_Template.xlsm`;
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                if (match) filename = match[1];
+            }
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus(`✅ ${stationId.toUpperCase()} template downloaded!`, 'success');
+            instructionsDiv.classList.add('show');
+            
+        } catch (error) {
+            showStatus(`❌ Error: ${error.message}`, 'error');
+        } finally {
+            downloadTemplateBtn.disabled = false;
+            downloadTemplateBtn.innerHTML = '📁 Download Template';
         }
-        
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        showStatus(`✅ ${stationId.toUpperCase()} template downloaded!`, 'success');
-        instructionsDiv.classList.add('show');
-        
-    } catch (error) {
-        showStatus(`❌ Error: ${error.message}`, 'error');
-    } finally {
-        downloadTemplateBtn.disabled = false;
-        downloadTemplateBtn.innerHTML = '📁 Download Template';
     }
-}
     
     // Download Inspection Data
     async function downloadData() {
@@ -600,7 +821,7 @@ async function downloadTemplate() {
             
             // Filter inspections by exact date
             const filteredInspections = result.inspections.filter(insp => {
-                let inspDate = insp.Date || insp._metadata?.inspectionDate || insp.date;
+                let inspDate = insp.Date || insp["Inspection Date"] || insp._metadata?.inspectionDate || insp.date;
                 if (inspDate) {
                     if (inspDate.includes('T')) inspDate = inspDate.split('T')[0];
                     if (inspDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
@@ -619,16 +840,17 @@ async function downloadTemplate() {
             
             showStatus(`✅ Found ${filteredInspections.length} record(s)`, 'success');
             
-            // Build worksheet data using station-specific headers and mapping
+            // Build worksheet data using station-specific headers
             const worksheetData = [headers];
             
             for (const insp of filteredInspections) {
                 const row = new Array(headers.length).fill('');
                 for (const [jsonKey, value] of Object.entries(insp)) {
                     if (jsonKey.startsWith('_') || jsonKey === 'undefined' || jsonKey === 'timestamp') continue;
-                    const columnIndex = fieldMap[jsonKey];
-                    if (columnIndex !== undefined && value !== undefined && value !== null && value !== '') {
-                        row[columnIndex] = value;
+                    // Find header index by matching the key directly
+                    const headerIndex = headers.findIndex(h => h === jsonKey);
+                    if (headerIndex !== -1 && value !== undefined && value !== null && value !== '') {
+                        row[headerIndex] = value;
                     }
                 }
                 worksheetData.push(row);
@@ -652,11 +874,11 @@ async function downloadTemplate() {
             URL.revokeObjectURL(url);
             
             // Show preview
-            const previewRows = worksheetData.slice(0, 6);
-            const previewText = previewRows.map(row => row.slice(0, 8).join(',')).join('<br>');
+            const previewRows = worksheetData.slice(0, Math.min(worksheetData.length, 6));
+            const previewText = previewRows.map(row => row.slice(0, 5).join(',')).join('\n');
             dataPreviewDiv.innerHTML = `
-                <strong>📄 Data Preview (first ${Math.min(worksheetData.length, 6)} rows, first 8 columns):</strong><br>
-                <code>${previewText.substring(0, 800)}...</code><br>
+                <strong>📄 Data Preview (first ${Math.min(worksheetData.length, 6)} rows, first 5 columns):</strong><br>
+                <code style="font-size: 10px;">${previewText.substring(0, 800)}...</code><br>
                 <hr>
                 <strong>Station: ${stationId.toUpperCase()}</strong><br>
                 <strong>Total records: ${filteredInspections.length}</strong><br>
