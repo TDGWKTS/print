@@ -115,7 +115,7 @@
             <div class="rectify-scroll">
                 <table class="rectify-table">
                     <thead>
-                        <tr id="gridHeaderRow"></tr>
+                        <tr id="gridHeaderRow"><tr>
                     </thead>
                     <tbody id="gridBodyRow"></tbody>
                 </table>
@@ -185,9 +185,20 @@
         });
     }
 
+    // FIXED: statusDiv is now properly defined
+    const statusDiv = document.getElementById('status');
+    const loginStatusDiv = document.getElementById('loginStatus');
+    
     function showStatus(message, type) {
-        statusDiv.textContent = message;
-        statusDiv.className = `status ${type}`;
+        if (statusDiv) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        // Also show in login status if needed for login errors
+        if (type === 'error' && loginStatusDiv) {
+            loginStatusDiv.textContent = message;
+            loginStatusDiv.style.display = 'block';
+        }
     }
 
     // ================= 🔑 PROCESS ENDPOINT SIGN IN =================
@@ -249,6 +260,12 @@
 
     document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.reload(); });
     
+    // Get button references
+    const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+    const showRecordsBtn = document.getElementById('showRecordsBtn');
+    const downloadDataBtn = document.getElementById('downloadDataBtn');
+    const dateSelect = document.getElementById('dateSelect');
+    
     // ================= 📁 SYNCED ASSET DOWNLOAD (TEMPLATES) =================
     async function downloadTemplate() {
         const stationPicker = document.getElementById('stationSelect');
@@ -268,7 +285,6 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            // Now matches layout format requirements
             a.download = `${stationId.toLowerCase()}_master.xlsm`;
             document.body.appendChild(a);
             a.click();
@@ -303,7 +319,7 @@
         });
     }
 
-    // Grid rendering logic trigger (No auto spreadsheet assembly)
+    // Grid rendering logic trigger
     async function handleShowRecords() {
         const stationPicker = document.getElementById('stationSelect');
         const stationId = stationPicker.getAttribute('data-locked-val') || stationPicker.value;
@@ -402,8 +418,10 @@
             tr.innerHTML = `<td><button class="btn-primary" style="padding:6px 12px; font-size:12px; border-radius:6px;" onclick="executeRectification(${index}, '${stationId}')">Submit</button></td>`;
             
             headers.forEach(field => {
-                const val = record[field] !== undefined ? record[field] : '';
-                tr.innerHTML += `<td><input type="text" class="grid-cell-input" data-row="${index}" data-field="${field}" value="${val}"></td>`;
+                let val = record[field] !== undefined && record[field] !== null ? record[field] : '';
+                // Escape double quotes and backslashes to prevent XSS and string breakage
+                const escapedVal = String(val).replace(/\\/g, '\\\\').replace(/"/g, '&quot;');
+                tr.innerHTML += `<td><input type="text" class="grid-cell-input" data-row="${index}" data-field="${field}" value="${escapedVal}"></td>`;
             });
             bodyRow.appendChild(tr);
         });
@@ -412,11 +430,11 @@
 
     // ================= ✏️ SECURE UPDATE VERIFICATION ROUTINE =================
     window.executeRectification = async function(rowIndex, stationId) {
-        let targetRecord = currentFilteredArray[rowIndex];
+        let targetRecord = { ...currentFilteredArray[rowIndex] };
         
         // Enforce user permission access constraints
         if (userPost.startsWith('I(TD)')) {
-            const rowAuthor = targetRecord["Inspected By"] || targetRecord["Inspection Date"] ? targetRecord["Inspected By"] : targetRecord.inspectedBy || "";
+            const rowAuthor = targetRecord["Inspected By"] || targetRecord.inspectedBy || "";
             if (rowAuthor.trim().toLowerCase() !== userPost.trim().toLowerCase()) {
                 showStatus(`❌ Access Denied: Officers are restricted to modifying their own logs. (This log belongs to: "${rowAuthor}")`, 'error');
                 return;
@@ -436,14 +454,20 @@
                 body: JSON.stringify({ stationId, record: targetRecord })
             });
             const outcome = await response.json();
-            if (outcome.success) { showStatus('✅ Object mapping modification cleanly synchronized to Cloudflare R2 node storage!', 'success'); } 
-            else { throw new Error(outcome.error); }
+            if (outcome.success) { 
+                showStatus('✅ Object mapping modification cleanly synchronized to Cloudflare R2 node storage!', 'success');
+                // Update local array with new values
+                currentFilteredArray[rowIndex] = targetRecord;
+            } else { 
+                throw new Error(outcome.error); 
+            }
         } catch(err) { showStatus(`❌ Synchronization Interrupted: ${err.message}`, 'error'); }
     };
 
-    downloadTemplateBtn.addEventListener('click', downloadTemplate);
-    showRecordsBtn.addEventListener('click', handleShowRecords);
-    downloadDataBtn.addEventListener('click', handleDownloadData);
+    // Attach event listeners
+    if (downloadTemplateBtn) downloadTemplateBtn.addEventListener('click', downloadTemplate);
+    if (showRecordsBtn) showRecordsBtn.addEventListener('click', handleShowRecords);
+    if (downloadDataBtn) downloadDataBtn.addEventListener('click', handleDownloadData);
 </script>
 </body>
 </html>
