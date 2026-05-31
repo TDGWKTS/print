@@ -3,254 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Inspection Records - Multi-Station</title>
+    <title>Print Inspection Records - Multi-Station Portal</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; padding: 30px 20px; }
+        .container { max-width: 950px; margin: 0 auto; }
+        .card { background: white; border-radius: 20px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1 { font-size: 24px; margin-bottom: 8px; color: #1a1a2e; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #333; }
+        select, input { width: 100%; padding: 12px 16px; border: 1px solid #d0d0d0; border-radius: 12px; font-size: 16px; background: white; }
+        button { padding: 14px; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-primary { background: #059669; }
+        .btn-primary:hover { background: #047857; }
+        .btn-secondary { background: #4F46E5; }
+        .btn-secondary:hover { background: #4338CA; }
+        .button-group { display: flex; gap: 12px; margin-top: 8px; }
+        .button-group button { flex: 1; }
+        .status { margin-top: 20px; padding: 12px 16px; border-radius: 12px; font-size: 14px; display: none; }
+        .status.success { background: #DCFCE7; color: #166534; display: block; }
+        .status.error { background: #FEE2E2; color: #991B1B; display: block; }
+        .status.info { background: #DBEAFE; color: #1E40AF; display: block; }
+        .status.warning { background: #FEF3C7; color: #92400E; display: block; }
         
-        body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            background: #f0f2f5;
-            padding: 30px 20px;
-        }
-        
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-        }
-        
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-        
-        h1 {
-            font-size: 24px;
-            margin-bottom: 8px;
-            color: #1a1a2e;
-        }
-        
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-        
-        .form-group {
-            margin-bottom: 24px;
-        }
-        
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #333;
-        }
-        
-        select, input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #d0d0d0;
-            border-radius: 12px;
-            font-size: 16px;
-            font-family: inherit;
-            background: white;
-        }
-        
-        button {
-            padding: 14px;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        button:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-        }
-        
-        .btn-primary {
-            background: #059669;
-        }
-        
-        .btn-primary:hover {
-            background: #047857;
-        }
-        
-        .btn-secondary {
-            background: #4F46E5;
-        }
-        
-        .btn-secondary:hover {
-            background: #4338CA;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 8px;
-        }
-        
-        .button-group button {
-            flex: 1;
-        }
-        
-        .status {
-            margin-top: 20px;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            display: none;
-        }
-        
-        .status.success {
-            background: #DCFCE7;
-            color: #166534;
-            display: block;
-        }
-        
-        .status.error {
-            background: #FEE2E2;
-            color: #991B1B;
-            display: block;
-        }
-        
-        .status.info {
-            background: #DBEAFE;
-            color: #1E40AF;
-            display: block;
-        }
-        
-        .status.warning {
-            background: #FEF3C7;
-            color: #92400E;
-            display: block;
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid white;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        hr {
-            margin: 20px 0;
-            border: none;
-            border-top: 1px solid #e5e7eb;
-        }
-        
-        .instructions {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 20px;
-            font-size: 13px;
-            display: none;
-        }
-        
-        .instructions.show {
-            display: block;
-        }
-        
-        .instructions ol {
-            margin-left: 20px;
-            margin-top: 10px;
-        }
-        
-        .instructions li {
-            margin: 8px 0;
-        }
-        
-        .note {
-            background: #FFFBEB;
-            border-left: 4px solid #F59E0B;
-            padding: 12px;
-            font-size: 12px;
-            color: #92400E;
-            margin-top: 20px;
-            border-radius: 8px;
-        }
-        
-        .step {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 16px;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 12px;
-        }
-        
-        .step-number {
-            width: 28px;
-            height: 28px;
-            background: #4F46E5;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-        
-        .step-text {
-            flex: 1;
-            line-height: 1.4;
-        }
-        
-        .step-title {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-        
-        .data-preview {
-            margin-top: 16px;
-            padding: 12px;
-            background: #f3f4f6;
-            border-radius: 8px;
-            font-size: 11px;
-            font-family: monospace;
-            overflow-x: auto;
-            display: none;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        
-        .data-preview.show {
-            display: block;
-        }
+        /* Rectification Data Grid View Styles */
+        .rectify-container { margin-top: 24px; padding: 20px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; display: none; }
+        .rectify-scroll { overflow-x: auto; max-height: 380px; margin-top: 12px; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .rectify-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+        .rectify-table th, .rectify-table td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+        .rectify-table th { background: #f8f9fa; font-weight: 600; color: #333; position: sticky; top: 0; z-index: 5; }
+        .grid-cell-input { padding: 6px 10px; font-size: 12px; border: 1px solid #ccc; border-radius: 6px; width: 150px; }
+        .hidden { display: none !important; }
+        .login-card { max-width: 450px; margin: 60px auto; background: white; padding: 35px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .note { background: #FFFBEB; border-left: 4px solid #F59E0B; padding: 12px; font-size: 12px; color: #92400E; margin-top: 20px; border-radius: 8px; }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="card">
-        <h1>📄 Print Inspection Records</h1>
-        <div class="subtitle">Select station and date to export inspection data</div>
+
+<div id="loginSection" class="container">
+    <div class="login-card">
+        <h1 style="text-align: center; margin-bottom: 4px;">🔒 Station Access Portal</h1>
+        <div class="subtitle" style="text-align: center; margin-bottom: 24px;">Please provide verification credentials to continue</div>
         
         <div class="form-group">
-            <label>📍 Station</label>
-            <select id="stationSelect">
-                <option value="">Select station...</option>
+            <label>📍 Operations Station Assignment</label>
+            <select id="loginStation">
+                <option value="">Select operational unit...</option>
                 <option value="wkts">WKTS (West Kowloon Transfer Station)</option>
-                <option value="nwnt">NWNTTS (North West New Territories Transfer Station)</option>
+                <option value="nwnt">NWNTTS (North West New Territories)</option>
                 <option value="iets">IETS (Island East Transfer Station)</option>
                 <option value="iwts">IWTS (Island West Transfer Station)</option>
                 <option value="stts">STTS (Shatin Transfer Station)</option>
@@ -260,7 +64,41 @@
         </div>
         
         <div class="form-group">
-            <label>📅 Inspection Date</label>
+            <label>💼 Account Operational Post Role</label>
+            <select id="loginPost" onchange="toggleOfficerNameInput()">
+                <option value="">Select post assignment...</option>
+                <option value="Supervisor">Supervisor (Super Admin - All Stations)</option>
+                <option value="Operator">Officer / Operator (Assigned Station Lock)</option>
+            </select>
+        </div>
+
+        <div class="form-group hidden" id="officerNameGroup">
+            <label>👤 Officer Name (Must match your form input signature exactly)</label>
+            <input type="text" id="loginOfficerName" placeholder="e.g., John Doe">
+        </div>
+        
+        <div class="form-group">
+            <label>🔑 System Access Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••">
+        </div>
+        
+        <button id="loginBtn" class="btn-secondary" style="width:100%">Sign In to Workspace Context</button>
+        <div id="loginStatus" class="status error" style="margin-top:15px;"></div>
+    </div>
+</div>
+
+<div id="mainWorkspace" class="container hidden">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <h1 style="margin:0;">📄 Print Inspection Records</h1>
+            <button id="logoutBtn" style="padding: 6px 14px; font-size:12px; background:#ef4444; border-radius:8px;" class="btn-primary">Logout</button>
+        </div>
+        <div class="subtitle" style="margin-bottom:20px;">Identity Context: <span id="userDisplay" style="font-weight:bold; color:#4F46E5;"></span></div>
+        
+        <div class="form-group" id="stationFieldWrapper"></div>
+        
+        <div class="form-group">
+            <label>📅 Target Calendar Inspection Date</label>
             <input type="date" id="dateSelect">
         </div>
         
@@ -270,59 +108,23 @@
         </div>
         
         <div id="status" class="status"></div>
-        <div id="dataPreview" class="data-preview"></div>
         
-        <div id="instructions" class="instructions">
-            <div class="step">
-                <div class="step-number">1</div>
-                <div class="step-text">
-                    <div class="step-title">Download Template (First Time Only)</div>
-                    Click <strong>Download Template</strong> to get the master Excel template for the selected station.
-                </div>
-            </div>
-            <div class="step">
-                <div class="step-number">2</div>
-                <div class="step-text">
-                    <div class="step-title">Download Inspection Data</div>
-                    Click <strong>Download Inspection Data</strong> to get the inspection records for the selected station and date.
-                </div>
-            </div>
-            <div class="step">
-                <div class="step-number">3</div>
-                <div class="step-text">
-                    <div class="step-title">Open Both Files</div>
-                    Open the downloaded template and the inspection data file.
-                </div>
-            </div>
-            <div class="step">
-                <div class="step-number">4</div>
-                <div class="step-text">
-                    <div class="step-title">Copy Data</div>
-                    In the inspection data file, select all data cells from <strong>A2</strong> to the last row/column, then press <strong>Ctrl+C</strong>.
-                </div>
-            </div>
-            <div class="step">
-                <div class="step-number">5</div>
-                <div class="step-text">
-                    <div class="step-title">Paste to Print Worksheet</div>
-                    In the template file, go to the <strong>Print</strong> worksheet, select cell <strong>A6</strong>, then press <strong>Ctrl+V</strong>.
-                </div>
-            </div>
-            <div class="step">
-                <div class="step-number">✓</div>
-                <div class="step-text">
-                    <div class="step-title">Print</div>
-                    Your data is now in the Print sheet. All formulas will auto-calculate. Review and print.
-                </div>
+        <div id="correctionSection" class="rectify-container">
+            <h3 style="font-size: 15px; color: #1a1a2e;">✏️ Rectify Inputted Daily Table Entries</h3>
+            <div style="font-size:12px; color:#666; margin-top:2px;">Alter metrics below. Officers can view all entries but save changes <strong>only to their own rows</strong>.</div>
+            
+            <div class="rectify-scroll">
+                <table class="rectify-table">
+                    <thead>
+                        <tr id="gridHeaderRow"></tr>
+                    </thead>
+                    <tbody id="gridBodyRow"></tbody>
+                </table>
             </div>
         </div>
-        
-        <hr>
-        
+
         <div class="note">
-            💡 <strong>Important:</strong> Your Excel template is never modified by any server.<br>
-            You simply copy data from the downloaded file and paste into your Print sheet row 6.<br>
-            <strong>All your formulas (checkmarks, calculations) and formatting remain intact.</strong>
+            💡 <strong>Download Behavior Note:</strong> System preserves full original download scripts. Anyone can download complete historical worksheets. Row authorization checks are applied contextually only during cloud data mutations.
         </div>
     </div>
 </div>
@@ -331,532 +133,194 @@
 <script>
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
     
-    // ========== STATION-SPECIFIC HEADERS ==========
+    let sessionToken = localStorage.getItem('sessionToken');
+    let userStation = localStorage.getItem('userStation');
+    let userPost = localStorage.getItem('userPost');
+    let officerName = localStorage.getItem('officerName');
+    let currentFilteredArray = []; 
+
+    // ================= ALL ORIGINAL SYSTEM HEADERS COMPLETELY RESTORED =================
     const stationHeaders = {
-        wkts: [
-            "Date", "Inspected By", "Time", "Weather", 
-            "WB No.1", "WB No.2", "WB No.3", "WB No.4",
-            "CCTV/ Recording System", "Weight Display correctness", 
-            "Bridge Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?", 
-            "Inspected by EPD", "Inspected by CHEC",
-            "Tipping Vehicle No.", "Waste Type", "Permitted Waste", 
-            "Traffic control signal", "CCTV system",
-            "Filter Press Value", 
-            "Status C1", "C1", "Status C2", "C2", "MF1",
-            "Status C3", "C3", "MF2", "Status C4", "C4", "MF3",
-            "Status C5", "C5", "MF4", "Status C6", "C6", "MF5",
-            "Status C7", "C7", "MF6", "Status C8", "C8",
-            "Status C9", "C9", "Status C10", "C10",
-            "Screen 1", "Screen 2", "Screen 3",
-            "1A", "1B", "2A", "2B",
-            "DAF 1", "DAF 2", "Area Cleaned",
-            "Crane 1", "Crane 2", "CHU 1", "CHU 2",
-            "145B", "55FV", "155WD", "Others",
-            "Lai Wan", "Ngon Shuen",
-            "Vehicle Wash 1", "Vehicle Wash 2", "Vehicle Wash 3",
-            "VW Clean ?", "Waste clearance > 30 mins? ", "Off-site litter > 24 hrs? ",
-            "Air Curtain",
-            "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5",
-            "Acid Scrubber 1", "Acid Scrubber 2", "Acid Scrubber 4", "Acid Scrubber 5",
-            "Alk Scrubber 1", "Alk Scrubber 2", "Alk Scrubber 3", "Alk Scrubber 4", "Alk Scrubber 5",
-            "ORP 1", "ORP 2", "ORP 3", "ORP 4", "ORP 5",
-            "Before Treatment ", "Anaerobic Tanks",
-            "Aerobic Tank T300", "Aerobic Tank T401", "Aerobic Tank T402", "Aerobic Tank T403", "Aerobic Tank T404",
-            "Final Clarifer", "Filter Press Status", "Bigas Tank", "Penstock",
-            "Remarks1", "Remarks2", "Remarks3", "Remarks 4",
-            "PLC", "Pre-Treat", "Penstock Chamber", "Aerobic Status",
-            "T-401", "T-402", "T-403", "T-404",
-            "Anaerobic Status", "pH", "Temp", "DO", "Biogas Level",
-            "Post-Treatment Status", "Centrifuge", "Wetsep", "Marine Vessel", "Storm water", "VWF wastewater",
-            "Rundown Screen", "FIQT -101", "FIQT -100", "FIT-313", "FIT-312", "T410", "FIT-413",
-            "Public", "Road Wash", "Marine", "Scrubbers", "VWS",
-            "DO T-401", "DO T-402", "DO T-403", "DO T-404",
-            "Temp T-401", "Temp T-402", "Temp T-403", "Temp T-404",
-            "pH T-404",
-            "Number of Containers Completed",
-            "Wheelstopper Conditions", "Wheelstopper Conditions (Remarks)",
-            "DG Storage",
-            "Status C6A", "C6A"
-        ],
-        nwnt: [
-            "Date", "Inspected By", "Time", "Weather",
-            "WB No.1", "WB No.2", "WB No.3", "WB No.4",
-            "CCTV/ Recording System", "Weight Display correctness",
-            "Bridge Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?",
-            "Inspected by EPD", "Inspected by CHEC",
-            "Tipping Vehicle No.", "Waste Type", "Permitted Waste",
-            "Traffic control signal", "CCTV system",
-            "Filter Press",
-            "C1", "Container No. (C1)", "C2", "Container No. (C2)",
-            "C3", "Container No. (C3)", "C4", "Container No. (C4)",
-            "C5", "Container No. (C5)", "C6", "Container No. (C6)",
-            "C7", "Container No. (C7)", "C8", "Container No. (C8)",
-            "Screen 1", "Screen 2", "Screen 3",
-            "Tank 1A", "Tank 1B", "Tank 2A", "Tank 2B",
-            "DAF 1", "DAF 2", "GTW Area",
-            "Crane 1", "Crane 2", "CHU 1", "CHU 2",
-            "145B", "550FV", "155WV", "Others",
-            "Lai Wan", "Ngon Shuen",
-            "Vehicle Wash 1", "Vehicle Wash 2",
-            "Cleanliness", ">30 mins", "Offsite >24 hrs",
-            "Air Curtain",
-            "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5",
-            "Acid Stage 1", "Acid Stage 2", "Acid Stage 4", "Acid Stage 5",
-            "Alk Stage 1", "Alk Stage 2", "Alk Stage 3", "Alk Stage 4", "Alk Stage 5",
-            "ORP Range 1", "ORP Range 2", "ORP Range 3", "ORP Range 4", "ORP Range 5",
-            "Before Treatment", "Anaerobic Tanks",
-            "T300", "T401", "T402", "T403", "T404",
-            "Final Clarifier", "Filter Press", "Biogas Tank", "Penstock",
-            "Remarks 1", "Remarks 2", "Remarks 3", "Remarks 4",
-            "PLC Condition", "Pre Treatment", "Penstock Status", "AerobicS",
-            "AT401", "AT402", "AT403", "AT404",
-            "AnaerobicS", "ApH", "ATemp", "ADO", "ABiogas",
-            "Post-Treatment", "Centrifuge", "Wetsep", "Marine Vessel", "Storm", "VWF", "Rundown",
-            "101", "100", "313", "312", "410", "413",
-            "Public", "Road", "Marine", "Scrubbers", "VWS",
-            "401 DO", "402 DO", "403 DO", "404 DO",
-            "401 Temp", "402 Temp", "403 Temp", "404 Temp", "404 pH",
-            "Number of Containers Completed", "Wheelstopper Conditions",
-            "Wheelstopper Conditions (Remarks)", "DG Storage", "C6A", "Container No. (C6A)"
-        ],
-        iets: [
-            "Date", "Inspected By", "Time", "Weather AM", "Weather PM", "Day",
-            "1.1 Weighbridge area cleanliness", "1.2 Traffic smoothness", "1.3 Weighbridge display / Traffic light (In)",
-            "1.4 Weighbridge display / Traffic light (Out)", "1.5 Computer / Printer", "1.6 Operator / Lighting",
-            "1.7 CCTV system", "1.8 Score Board",
-            "2.1 Pushpit Indicator / Traffic light", "2.2 Access cleanliness", "2.3 Traffic smoothness", "2.4 Vehicle wash plant",
-            "3.1 Traffic smoothness", "3.2 Tipping hall cleanliness", "3.3 Traffic light / Lighting", "3.4 Channel no. 1 / no. 2",
-            "3.5 Spray / Dust", "3.6 Ventilation fan / Odour", "3.7 Manual disposal Container no.", "3.8 Worker", "3.9 Wheel stopper",
-            "4.1 Operator / CCTV system", "4.2 Odour / Dust", "4.3 Air conditioning / Lighting",
-            "5.1 Compactor hall cleanliness", "5.2 Odour / Dust", "5.3 Lighting / Traffic smoothness", "5.4 Tractor / Trailer", "5.5 Worker",
-            "6.1 Lighting / Odour", "6.2 Sump pit / Balancing tank", "6.3 Run-down screen / Sump pump", "6.4 Oil skimmer / CEPT",
-            "6.5 Sludge holding tank / Filter press", "6.6 Air blower unit no. 1 / 2 / 3", "6.7 SBR 1 / SBR 2 (Aeration/Settling/Idle)",
-            "6.8 Effluent tank / pH meter", "6.9 Effluent discharged meter (readings)",
-            "7.1 Container access cleanliness", "7.2 Container stockpile", "7.3 Container handling unit (CHU)", "7.4 Lighting / Odour",
-            "7.5 No. of Quality Checking of Waste Container (LCF / QCF)",
-            "8.1 Vessel name", "8.2 Berth area cleanliness", "8.3 Traffic smoothness",
-            "9.1 Ramp cleanliness / Lighting", "9.2 Traffic smoothness",
-            "10.1 Road sweeper cleaning streets", "10.2 Road sweeper cleaning site area",
-            "Start Time", "End Time", "Supervisor", "Technician", "Mechanic / Electrician", "Pushpit/Compactor operator",
-            "Weighbridge operator", "Tractor driver", "Cleaner", "Labourer", "Compactor worker", "Semiskilled worker",
-            "PART II - Weighbridge Operation Checked by", "PART II - Daily waste transaction record checked",
-            "PART II - Weighbridge Time", "PART II - Overall system normal", "PART II - Weighbridge Remark",
-            "PART II - Vehicle Turnaround Time within contract", "PART II - Queuing off-site observed",
-            "PART II - Staff check record with electronic transaction", "PART II - Turnaround Remark",
-            "PART II - Waste Inspection Inspected by", "PART II - Waste Inspection Time/Location", "PART II - Waste Remark",
-            "PART II - Tipping Inspected by", "PART II - Waste handling properly", "PART II - Tipping Time/Location", "PART II - Tipping Remark",
-            "PART II - Leakage Recorded by", "PART II - Leakage Time/Location", "PART II - Leakage Container nos.", "PART II - Leakage Caused by", "PART II - Leakage Remark",
-            "PART II - Machinery Inspected by", "PART II - Machinery Time/Location", "PART II - Machinery Remark",
-            "PART II - FSP Conducted by", "PART II - FSP Witnessed by", "PART II - FSP Time", "PART II - FSP Sampling from", "PART II - FSP Remark",
-            "PART II - Gas Conducted by", "PART II - Gas Witnessed by", "PART II - Gas Time", "PART II - Gas Sampling Location", "PART II - Gas Remark",
-            "PART II - Noise Conducted by", "PART II - Noise Witnessed by", "PART II - Noise Measuring Point",
-            "PART II - Noise Time Day", "PART II - Noise Calibration Day", "PART II - Noise Time Night", "PART II - Noise Calibration Night", "PART II - Noise Remark",
-            "PART II - Water Conducted by", "PART II - Water Witnessed by", "PART II - Water Guidelines followed", "PART II - Water Details", "PART II - Water Remark",
-            "PART II - Sludge Conducted by", "PART II - Sludge Witnessed by", "PART II - Sludge Time", "PART II - Sludge Remark",
-            "PART II - Pest Conducted by", "PART II - Pest Witnessed by", "PART II - Pest Time", "PART II - Pest Treatment", "PART II - Pest Remark",
-            "PART II - Smoke Witnessed by", "PART II - Smoke Details", "PART II - Smoke Remark",
-            "Timestamp"
-        ],
-        iwts: [
-            "Date", "Inspected By", "Time", "Weather AM", "Weather PM",
-            "1.1 Weighbridge area cleanliness", "1.2 Traffic smoothness / Drop Bar",
-            "1.3 Weighbridge display / Traffic light (In)", "1.4 Weighbridge display / Traffic light (Out)",
-            "1.5 Computer / Printer", "1.6 Operator / Lighting", "1.7 CCTV system",
-            "2.1 Channel indicator / Traffic light", "2.2 RCV access cleanliness / Roller Shutter",
-            "2.3 Traffic smoothness / Drop Bar", "2.4 Air Curtain / Atomising system",
-            "3.1 Water spraying / brushing", "3.2 Drop Bar / Traffic Light",
-            "4.1 Traffic smoothness", "4.2 Tipping hall cleanliness / Lighting",
-            "4.3 Traffic light / Channel no.", "4.4 Spray / Dust", "4.5 Ventilation fan / Odour",
-            "4.6 Wheel stopper condition / maintenance", "4.7 Infrared heat detection / Overhead detection",
-            "4.8 Dust and odour suppressing system", "5.1 Operator", "5.2 Odour / Dust",
-            "5.3 Air conditioning / Lighting", "6.1 Unit 1 / Unit 2", "6.2 Air scrubber cleanliness",
-            "6.3 Odour / Dust", "6.4 Circulation system / Chemicals", "7.1 Compactor hall cleanliness",
-            "7.2 Odour / Dust", "7.3 Lighting / Traffic smoothness", "7.4 Tractor / Trailer",
-            "8.1.1 Main Collection Tank - Lighting / Odour", "8.1.2 Main Collection Tank - Run-down screen",
-            "8.2.1 Treatment Effluent Tank - Lighting / Odour", "8.3.1 Sludge Holding Tank - Lighting / Odour",
-            "8.4.1 SBR Tank - Lighting / Odour", "8.4.2 Sequencing batch reactor (SBR) on/off",
-            "8.4.3 Recirculation pump", "8.5.1 Filter Press Room - Odour / Dust / Ventilation fan",
-            "9.1 Container access cleanliness / Roller shutter", "9.2 Lighting / Odour",
-            "9.3 Air Curtain / Atomising system", "10.1 Vessel name", "10.2 Berth area cleanliness / Atomising System",
-            "10.3 Traffic smoothness", "10.4 Container stockpile", "10.5 Container handling unit (CHU)",
-            "11.1 Spiral ramp cleanliness / Lighting", "11.2 Traffic smoothness", "11.3 Auto Cleaning System",
-            "12.1 Road sweeper cleaning streets", "12.2 Road sweeper cleaning site area", "12.3 Odour Monitoring System",
-            "Non-operation hours (2330-0730)", "Ventilation fans", "Mainfan NEF 2 (Hz)", "Mainfan NEF 3 (Hz)",
-            "Tipping Hall (NSF 1)", "Dry Scrubber A", "Dry Scrubber B", "Dry Scrubber C", "Compactor Hall (NSF 4)",
-            "WWTP EEF 13", "WWTP EEF 14 (standby)", "WWTP ESF 15", "Shift Start Time", "Shift End Time",
-            "Supervisor", "Mobile plant operator", "Station operator", "Maintenance technician",
-            "Semiskilled worker", "WWTP operator", "Labour", "Livefloor operator", "Weighbridge operator",
-            "PART II - Weighbridge Operation Checked by", "PART II - Daily waste transaction record checked",
-            "PART II - Weighbridge Time", "PART II - Overall system normal", "PART II - Weighbridge Remark",
-            "PART II - Vehicle Turnaround Time within contract", "PART II - Queuing off-site observed",
-            "PART II - Turnaround Remark", "PART II - Waste Inspection Inspected by",
-            "PART II - Waste Inspection Vehicle No.", "PART II - Waste Inspection Time / Location",
-            "PART II - Permitted Waste", "PART II - Tipping Inspected by", "PART II - Waste handling properly",
-            "PART II - Tipping Time / Location", "PART II - Tipping Remark", "PART II - Leakage Recorded by",
-            "PART II - Leakage Time / Location", "PART II - Leakage Caused by", "PART II - Leakage Remark",
-            "PART II - Vehicle Wash Inspected by", "PART II - Vehicle properly cleaned",
-            "PART II - Vehicle Wash Time", "PART II - Vehicle Wash Vehicle No.",
-            "PART II - Machinery Inspected by", "PART II - Machinery Time / Location", "PART II - Machinery Remark",
-            "PART II - Litter Inspected by", "PART II - Litter Time / Location", "PART II - Litter Remark",
-            "PART II - Air Monitoring Conducted by", "PART II - Air Sampling from", "PART II - Air Witnessed by",
-            "PART II - Air Time", "PART II - Air Remark", "PART II - Noise Conducted by",
-            "PART II - Noise Measuring Point", "PART II - Noise Witnessed by",
-            "PART II - Sound Level Meter Calibration", "PART II - Noise Time", "PART II - Noise Remark",
-            "PART II - Water Sampling Conducted by", "PART II - Sampling guidelines followed",
-            "PART II - Water Witnessed by", "PART II - Water Sampling Point", "PART II - Water Time",
-            "PART II - Water Remark", "PART II - Sludge Conducted by", "PART II - Sludge Witnessed by",
-            "PART II - Sludge Time", "PART II - Sludge Remark", "PART II - Pest Control Conducted by",
-            "PART II - Pest Control Witnessed by", "PART II - Pest Control Time", "PART II - Pest Control Remark",
-            "Timestamp"
-        ],
-        stts: [
-            "Inspection Date", "Inspected By", "Shift / Time", "Weather", "Checked By",
-            "1. Industrial Water Meter Reading", "2. Waste Water Discharge Flow Meter Reading",
-            "3. Weighbridge CPU", "4. Status of Weighbridge No.1", "4. Status of Weighbridge No.2", "4. Status of Weighbridge No.3",
-            "5. Drop Barrier / Traffic Light No.1", "5. Drop Barrier / Traffic Light No.2", "5. Drop Barrier / Traffic Light No.3",
-            "6. CCTV No.1 (IN/OUT)", "6. CCTV No.2 (IN/OUT)", "6. CCTV No.3 (IN/OUT)",
-            "7. No. of Weighbridge Operator", "8. VOID or MANUAL ticket", "9. Water Spraying / Brushing",
-            "10. Drop Barrier / Traffic Light", "11. Recycling Water System Room", "12. Live floor No.1", "12. Live floor No.2", "12. Live floor No.3",
-            "13. Ventilation Fan No.1", "13. Ventilation Fan No.2", "14A. No. of Control Operator", "14B. No. of Tipper Hall Assistant",
-            "15. Lighting", "16. Traffic Light Indicator (Entrance)", "16A. Unloading Bays (Front / Rear)", "17. Water Spray nozzles",
-            "18. Bulky Waste Shredder", "19. Cleanliness of tipping area", "20. Final Scrubber No.1", "20. Final Scrubber No.2",
-            "20A. Data Logger (Final Scrubber)", "21. Main Fan No.1", "21. Main Fan No.2", "21. Main Fan No.3",
-            "21A. Data Logger (Main Fan)", "22. Compactor No.1", "22. Compactor No.2", "22. Compactor No.3",
-            "23. Chemicals Waste Storage (Properly stored)", "23A. Chemicals Waste Storage (Any spillage)", "24. Lighting",
-            "25. Filter Press Unit", "26. No. of Compactor Operator", "26B. No. of Compactor Hall Assistant",
-            "27. Status of Aeration Tank SBR1", "27. Status of Aeration Tank SBR2", "28. Venturi Scrubber Pump P1",
-            "28. Venturi Scrubber Pump P2", "29. Filter Press Unit", "30. Lighting", "31. Buffer Tank with Wastewater",
-            "32. Discharge of Wastewater", "33. Data Logger / Panel Display", "34. Record of Loaded Trailers - Compactor Hall",
-            "35. Record of Loaded Trailers - Open Area", "36. Malpractice - By-pass Weighbridge", "37. Malpractice - By-pass Vehicle Wash",
-            "38. Malpractice - Fast Speed", "39. Malpractice - Leachate Dripping", "40. CCTV - Main Entrance & Exit",
-            "41. CCTV - Open Area around Weighbridges", "42. CCTV - Back Yard Area", "43. CCTV - Wastewater Treatment Plant",
-            "44. CCTV - Compactor Hall", "45. CCTV - Workshop", "46. CCTV - Tipping Hall",
-            "OEP-1: Vehicle Turnaround Time > 25 min", "OEP-2: Queuing of RCVs outside the Station",
-            "OEP-3: Vehicle Washing House", "OEP-4: Spillage of Refuse at any External Location & Not Properly Removed within 30 min",
-            "OEP-5: Spillage of Refuse/Leakage of Leachate from Trailer", "OEP-6: Abnormal Noise", "OEP-7: Waste Inspection",
-            "OEP-8: Cleansing of the Cleansing Area (4 times per day)", "OEP-9: No. of Highway Tractor (Operate / Idle)",
-            "OEP-10: Highway Tractor (ST#) in Maintenance", "OEP-11: No. of Yard Tractor (Operate / Maintenance / Idle)",
-            "OEP-12: Trailer (C#) in Maintenance", "OEP-13: Cleanliness of Tractors and Trailers Body",
-            "OEP-14: Bobcat / Sweeper / Scrubber Drier", "OEP-15: No. of backhoe loader (JCB) operate at tipping hall",
-            "OEP-16: Storm Drain Channel / Catchpit Condition", "OEP-17: Wastewater Sample Lab", "OEP-17: Wastewater Sample Time",
-            "OEP-18: Storm Water Sample Lab", "OEP-18: Storm Water Sample Time", "OEP-19: Influent Sample Time",
-            "OEP-20: Sludge Cake Lab", "OEP-20: Sludge Cake Time", "OEP-21: RSP Time", "OEP-22: Noise Measurement Time",
-            "OEP-23: CO & NO2 Time", "OEP-24: Odour Patrol Time", "OEP-24: Mal-odour detected (0-4)",
-            "OEP-25: Pest/Rodent Breeding Places (Time)", "OEP-26: Pest/Rodent Control Fogging Time",
-            "OEP-27: Black Smoke Time", "OEP-28: Operation Manager", "OEP-29: Officer / Guest Visited STTS",
-            "RCV Vehicle No(s).", "V Type", "Waste Type", "TICKET NO.", "Container Cleaned", "Spot Check Remarks",
-            "General Remarks", "Timestamp"
-        ],
-        oitf: [
-            "Date", "Inspected By", "Time", "Weather",
-            "WB No.1", "WB No.2", "WB No.3", "WB No.4",
-            "CCTV/ Recording System", "Weight Display correctness",
-            "Bridge Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?",
-            "Inspected by EPD", "Inspected by CHEC",
-            "Tipping Vehicle No.", "Waste Type", "Permitted Waste",
-            "Traffic control signal", "CCTV system",
-            "Filter Press",
-            "C1", "Container No. (C1)", "C2", "Container No. (C2)",
-            "C3", "Container No. (C3)", "C4", "Container No. (C4)",
-            "C5", "Container No. (C5)", "C6", "Container No. (C6)",
-            "C7", "Container No. (C7)", "C8", "Container No. (C8)",
-            "Screen 1", "Screen 2", "Screen 3",
-            "Tank 1A", "Tank 1B", "Tank 2A", "Tank 2B",
-            "DAF 1", "DAF 2", "GTW Area",
-            "Crane 1", "Crane 2", "CHU 1", "CHU 2",
-            "145B", "550FV", "155WV", "Others",
-            "Lai Wan", "Ngon Shuen",
-            "Vehicle Wash 1", "Vehicle Wash 2",
-            "Cleanliness", ">30 mins", "Offsite >24 hrs",
-            "Air Curtain",
-            "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5",
-            "Acid Stage 1", "Acid Stage 2", "Acid Stage 4", "Acid Stage 5",
-            "Alk Stage 1", "Alk Stage 2", "Alk Stage 3", "Alk Stage 4", "Alk Stage 5",
-            "ORP Range 1", "ORP Range 2", "ORP Range 3", "ORP Range 4", "ORP Range 5",
-            "Before Treatment", "Anaerobic Tanks",
-            "T300", "T401", "T402", "T403", "T404",
-            "Final Clarifier", "Filter Press", "Biogas Tank", "Penstock",
-            "Remarks 1", "Remarks 2", "Remarks 3", "Remarks 4",
-            "PLC Condition", "Pre Treatment", "Penstock Status", "AerobicS",
-            "AT401", "AT402", "AT403", "AT404",
-            "AnaerobicS", "ApH", "ATemp", "ADO", "ABiogas",
-            "Post-Treatment", "Centrifuge", "Wetsep", "Marine Vessel", "Storm", "VWF", "Rundown",
-            "101", "100", "313", "312", "410", "413",
-            "Public", "Road", "Marine", "Scrubbers", "VWS",
-            "401 DO", "402 DO", "403 DO", "404 DO",
-            "401 Temp", "402 Temp", "403 Temp", "404 Temp", "404 pH",
-            "Number of Containers Completed", "Wheelstopper Conditions",
-            "Wheelstopper Conditions (Remarks)", "DG Storage", "C6A", "Container No. (C6A)"
-        ],
-        nlts: [
-            "Date", "Inspected By", "Time", "Day", "Weather AM", "Weather PM", "Typhoon No.", "Typhoon Hoisted On", "Rainstorm Black Issued",
-            "A1. Weighbridge (1/2)", "A2. Traffic Light / Display", "A3. Computer System (1/2)", "A4. CCTV / Video Record System",
-            "A5. Cancel Ticket", "A5. Amended Ticket", "A5. Manual Ticket", "A6. Weighbridge Cleanliness",
-            "B1. Vehicle Wash / Recycle Water Plant", "B2. Traffic Light / Malodour Identify",
-            "C1. Traffic light Indicator / Lighting intensity", "C2. Water Nozzles / Lighting devices", "C3. Ventilation",
-            "C4. Air Scrubber 1", "C4. Air Scrubber 2", "C4. Air Scrubber 3", "C4. Air Scrubber 4",
-            "C5. Bulky Waste Disposal Area", "C6. Moving Floors (1/2/3/4)", "C7. Wheel Stopper", "C8. Unloading activity",
-            "C9. Manpower", "C10. Cleanliness",
-            "D1. CCTV System / PA System", "D2. Manpower",
-            "E1. Compactors (1/2/3/4)", "E2. Chemical Waste Compliance", "E3. Cleanliness",
-            "F1. Lighting intensity", "F2. Marine Vessels Docked", "F2. Left before", "F2. Return before",
-            "F3. Loaded Container for Overnight Storage", "F4. Cleanliness",
-            "G1. Cleanliness",
-            "H1. Container under repair", "H1. Container complied with quality check",
-            "I1. Small Loader XCMG XC7-SR07", "I2. Backhoe Loader SHANMON 388 (SHAN1/SHAN2)", "I3. Road Sweeper ZC6456",
-            "I4. Container Handling Unit (CHU1/CHU2)", "I5. Yard Tractor Terberg (YT1/YT2/YT3)", "I6. Container Trailer (NLT 01-05)",
-            "I7. Any black smoke generated", "Supervisor", "Driver", "Labour", "Weighbridge Operator", "Maintenance", "WWTP Operator",
-            "Record of refuse trapped at container doors", "Record of leachate dripping containers",
-            "Cleaning of streets by", "Cleanliness condition along streets", "If poor, state location",
-            "Any blockage of surface channel", "If Y, state location",
-            "OD1 - Intensity", "OD2 - Intensity", "OD3 - Intensity", "OD4 - Intensity", "OD5 - Intensity",
-            "Wind direction", "Odour Weather",
-            "K1. Off Site Litter Control Cleanliness",
-            "L1. Any WCVs queuing outside", "L1. Max. No.", "L1. Time Period",
-            "L2. Any WCVs broken down", "L2. Vehicle No.", "L2. Time Period",
-            "L3. Random waste inspection by Contractor", "L3. Vehicle No.",
-            "M1. Air-NO2, CO Location", "M1. Air-NO2, CO Time",
-            "M2. Noise Level Location", "M2. Noise Level Time",
-            "M3. Odour patrol by Contractor (Done by)",
-            "N1. SBR1 Time", "N1. SBR1 Qty (L)", "N1. SBR2 Time", "N1. SBR2 Qty (L)",
-            "N1. Storm Time", "N1. Storm Qty (L)", "N1. Sludge Time", "N1. Sludge Qty (g)",
-            "N1. Foul Time", "N1. Foul Qty (L)",
-            "O1. Fine Screen / Distribution Tank",
-            "O2. SBR1 Status", "O2. SBR1 pH", "O2. SBR1 DO", "O2. SBR1 TSS",
-            "O3. SBR2 Status", "O3. SBR2 pH", "O3. SBR2 DO", "O3. SBR2 TSS",
-            "O4. Sludge Conditioning / Thickening Tank", "O5. Filter Press",
-            "O6. Penstock Chamber", "O6. If manual closed - Reasons", "O6. If manual closed - Time Period",
-            "O7. Flow meter reading AM (m³)", "O7. Flow meter reading PM (m³)", "O7. Flow meter reading Discharged (m³)",
-            "O8. Malodour Identify / Ventilation", "O9. Cleanliness",
-            "O10. Gas Detectors - Hydrogen Sulphide", "O10. Gas Detectors - Carbon Monoxide", "O10. Gas Detectors - Ammonia",
-            "O10. Methane CH1", "O10. Methane CH2", "O10. Methane CH3",
-            "P) Vehicle No.", "P) Time", "P) Source", "P) Classified", "P) Officer",
-            "Diary - CCTV video playback checked by", "Diary - CCTV video playback date",
-            "Diary - RCV Time in (hrs)", "Diary - RCV Gross time (hrs)", "Diary - RCV Tare time (hrs)",
-            "Diary - RCV Time left (hrs)", "Diary - RCV Total time (mins)",
-            "Diary - Remarks / Additional Notes",
-            "Timestamp"
-        ]
+        wkts: ["Date", "Inspected By", "Time", "Weather", "WB No.1", "WB No.2", "WB No.3", "WB No.4", "CCTV/ Recording System", "Weight Display correctness", "Bridge Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?", "Inspected by EPD", "Inspected by CHEC", "Tipping Vehicle No.", "Waste Type", "Permitted Waste", "Traffic control signal", "CCTV system", "Filter Press Value", "Status C1", "C1", "Status C2", "C2", "MF1", "Status C3", "C3", "MF2", "Status C4", "C4", "MF3", "Status C5", "C5", "MF4", "Status C6", "C6", "MF5", "Status C7", "C7", "MF6", "Status C8", "C8", "Status C9", "C9", "Status C10", "C10", "Screen 1", "Screen 2", "Screen 3", "1A", "1B", "2A", "2B", "DAF 1", "DAF 2", "Area Cleaned", "Crane 1", "Crane 2", "CHU 1", "CHU 2", "145B", "55FV", "155WD", "Others", "Lai Wan", "Ngon Shuen", "Vehicle Wash 1", "Vehicle Wash 2", "Vehicle Wash 3", "VW Clean ?", "Waste clearance > 30 mins? ", "Off-site litter > 24 hrs? ", "Air Curtain", "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5", "Acid Scrubber 1", "Acid Scrubber 2", "Acid Scrubber 4", "Acid Scrubber 5", "Alk Scrubber 1", "Alk Scrubber 2", "Alk Scrubber 3", "Alk Scrubber 4", "Alk Scrubber 5", "ORP 1", "ORP 2", "ORP 3", "ORP 4", "ORP 5", "Before Treatment ", "Anaerobic Tanks", "Aerobic Tank T300", "Aerobic Tank T401", "Aerobic Tank T402", "Aerobic Tank T403", "Aerobic Tank T404", "Final Clarifer", "Filter Press Status", "Bigas Tank", "Penstock", "Remarks1", "Remarks2", "Remarks3", "Remarks 4", "PLC", "Pre-Treat", "Penstock Chamber", "Aerobic Status", "T-401", "T-402", "T-403", "T-404", "Anaerobic Status", "pH", "Temp", "DO", "Biogas Level", "Post-Treatment Status", "Centrifuge", "Wetsep", "Marine Vessel", "Storm water", "VWF wastewater", "Rundown Screen", "FIQT -101", "FIQT -100", "FIT-313", "FIT-312", "T410", "FIT-413", "Public", "Road Wash", "Marine", "Scrubbers", "VWS", "DO T-401", "DO T-402", "DO T-403", "DO T-404", "Temp T-401", "Temp T-402", "Temp T-403", "Temp T-404", "pH T-404", "Number of Containers Completed", "Wheelstopper Conditions", "Wheelstopper Conditions (Remarks)", "DG Storage", "Status C6A", "C6A"],
+        nwnt: ["Date", "Inspected By", "Time", "Weather", "WB No.1", "WB No.2", "WB No.3", "WB No.4", "CCTV/ Recording System", "Weight Display correctness", "Bridge Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?", "Inspected by EPD", "Inspected by CHEC", "Tipping Vehicle No.", "Waste Type", "Permitted Waste", "Traffic control signal", "CCTV system", "Filter Press", "C1", "Container No. (C1)", "C2", "Container No. (C2)", "C3", "Container No. (C3)", "C4", "Container No. (C4)", "C5", "Container No. (C5)", "C6", "Container No. (C6)", "C7", "Container No. (C7)", "C8", "Container No. (C8)", "Screen 1", "Screen 2", "Screen 3", "Tank 1A", "Tank 1B", "Tank 2A", "Tank 2B", "DAF 1", "DAF 2", "GTW Area", "Crane 1", "Crane 2", "CHU 1", "CHU 2", "145B", "550FV", "155WV", "Others", "Lai Wan", "Ngon Shuen", "Vehicle Wash 1", "Vehicle Wash 2", "Cleanliness", ">30 mins", "Offsite >24 hrs", "Air Curtain", "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5", "Acid Stage 1", "Acid Stage 2", "Acid Stage 4", "Acid Stage 5", "Alk Stage 1", "Alk Stage 2", "Alk Stage 3", "Alk Stage 4", "Alk Stage 5", "ORP Range 1", "ORP Range 2", "ORP Range 3", "ORP Range 4", "ORP Range 5", "Before Treatment", "Anaerobic Tanks", "T300", "T401", "T402", "T403", "T404", "Final Clarifier", "Filter Press", "Biogas Tank", "Penstock", "Remarks 1", "Remarks 2", "Remarks 3", "Remarks 4", "PLC Condition", "Pre Treatment", "Penstock Status", "AerobicS", "AT401", "AT402", "AT403", "AT404", "AnaerobicS", "ApH", "ATemp", "ADO", "ABiogas", "Post-Treatment", "Centrifuge", "Wetsep", "Marine Vessel", "Storm", "VWF", "Rundown", "101", "100", "313", "312", "410", "413", "Public", "Road", "Marine", "Scrubbers", "VWS", "401 DO", "402 DO", "403 DO", "404 DO", "401 Temp", "402 Temp", "403 Temp", "404 Temp", "404 pH", "Number of Containers Completed", "Wheelstopper Conditions", "Wheelstopper Conditions (Remarks)", "DG Storage", "C6A", "Container No. (C6A)"],
+        iets: ["Date", "Inspected By", "Time", "Weather AM", "Weather PM", "Day", "1.1 Weighbridge area cleanliness", "1.2 Traffic smoothness", "1.3 Weighbridge display / Traffic light (In)", "1.4 Weighbridge display / Traffic light (Out)", "1.5 Computer / Printer", "1.6 Operator / Lighting", "1.7 CCTV system", "1.8 Score Board", "2.1 Pushpit Indicator / Traffic light", "2.2 Access cleanliness", "2.3 Traffic smoothness", "2.4 Vehicle wash plant", "3.1 Traffic smoothness", "3.2 Tipping hall cleanliness", "3.3 Traffic light / Lighting", "3.4 Channel no. 1 / no. 2", "3.5 Spray / Dust", "3.6 Ventilation fan / Odour", "3.7 Manual disposal Container no.", "3.8 Worker", "3.9 Wheel stopper", "4.1 Operator / CCTV system", "4.2 Odour / Dust", "4.3 Air conditioning / Lighting", "5.1 Compactor hall cleanliness", "5.2 Odour / Dust", "5.3 Lighting / Traffic smoothness", "5.4 Tractor / Trailer", "5.5 Worker", "6.1 Lighting / Odour", "6.2 Sump pit / Balancing tank", "6.3 Run-down screen / Sump pump", "6.4 Oil skimmer / CEPT", "6.5 Sludge holding tank / Filter press", "6.6 Air blower unit no. 1 / 2 / 3", "6.7 SBR 1 / SBR 2 (Aeration/Settling/Idle)", "6.8 Effluent tank / pH meter", "6.9 Effluent discharged meter (readings)", "7.1 Container access cleanliness", "7.2 Container stockpile", "7.3 Container handling unit (CHU)", "7.4 Lighting / Odour", "7.5 No. of Quality Checking of Waste Container (LCF / QCF)", "8.1 Vessel name", "8.2 Berth area cleanliness", "8.3 Traffic smoothness", "9.1 Ramp cleanliness / Lighting", "9.2 Traffic smoothness", "10.1 Road sweeper cleaning streets", "10.2 Road sweeper cleaning site area", "Start Time", "End Time", "Supervisor", "Technician", "Mechanic / Electrician", "Pushpit/Compactor operator", "Weighbridge operator", "Tractor driver", "Cleaner", "Labourer", "Compactor worker", "Semiskilled worker", "PART II - Weighbridge Operation Checked by", "PART II - Daily waste transaction record checked", "PART II - Weighbridge Time", "PART II - Overall system normal", "PART II - Weighbridge Remark", "PART II - Vehicle Turnaround Time within contract", "PART II - Queuing off-site observed", "PART II - Staff check record with electronic transaction", "PART II - Turnaround Remark", "PART II - Waste Inspection Inspected by", "PART II - Waste Inspection Time/Location", "PART II - Waste Remark", "PART II - Tipping Inspected by", "PART II - Waste handling properly", "PART II - Tipping Time/Location", "PART II - Tipping Remark", "PART II - Leakage Recorded by", "PART II - Leakage Time/Location", "PART II - Leakage Container nos.", "PART II - Leakage Caused by", "PART II - Leakage Remark", "PART II - Machinery Inspected by", "PART II - Machinery Time/Location", "PART II - Machinery Remark", "PART II - FSP Conducted by", "PART II - FSP Witnessed by", "PART II - FSP Time", "PART II - FSP Sampling from", "PART II - FSP Remark", "PART II - Gas Conducted by", "PART II - Gas Witnessed by", "PART II - Gas Time", "PART II - Gas Sampling Location", "PART II - Gas Remark", "PART II - Noise Conducted by", "PART II - Noise Witnessed by", "PART II - Noise Measuring Point", "PART II - Noise Time Day", "PART II - Noise Calibration Day", "PART II - Noise Time Night", "PART II - Noise Calibration Night", "PART II - Noise Remark", "PART II - Water Conducted by", "PART II - Water Witnessed by", "PART II - Water Guidelines followed", "PART II - Water Details", "PART II - Water Remark", "PART II - Sludge Conducted by", "PART II - Sludge Witnessed by", "PART II - Sludge Time", "PART II - Sludge Remark", "PART II - Pest Conducted by", "PART II - Pest Witnessed by", "PART II - Pest Time", "PART II - Pest Treatment", "PART II - Pest Remark", "PART II - Smoke Witnessed by", "PART II - Smoke Details", "PART II - Smoke Remark", "Timestamp"],
+        iwts: ["Date", "Inspected By", "Time", "Weather AM", "Weather PM", "1.1 Weighbridge area cleanliness", "1.2 Traffic smoothness / Drop Bar", "1.3 Weighbridge display / Traffic light (In)", "1.4 Weighbridge display / Traffic light (Out)", "1.5 Computer / Printer", "1.6 Operator / Lighting", "1.7 CCTV system", "2.1 Channel indicator / Traffic light", "2.2 RCV access cleanliness / Roller Shutter", "2.3 Traffic smoothness / Drop Bar", "2.4 Air Curtain / Atomising system", "3.1 Water spraying / brushing", "3.2 Drop Bar / Traffic Light", "4.1 Traffic smoothness", "4.2 Tipping hall cleanliness / Lighting", "4.3 Traffic light / Channel no.", "4.4 Spray / Dust", "4.5 Ventilation fan / Odour", "4.6 Wheel stopper condition / maintenance", "4.7 Infrared heat detection / Overhead detection", "4.8 Dust and odour suppressing system", "5.1 Operator", "5.2 Odour / Dust", "5.3 Air conditioning / Lighting", "6.1 Unit 1 / Unit 2", "6.2 Air scrubber cleanliness", "6.3 Odour / Dust", "6.4 Circulation system / Chemicals", "7.1 Compactor hall cleanliness", "7.2 Odour / Dust", "7.3 Lighting / Traffic smoothness", "7.4 Tractor / Trailer", "8.1.1 Main Collection Tank - Lighting / Odour", "8.1.2 Main Collection Tank - Run-down screen", "8.2.1 Treatment Effluent Tank - Lighting / Odour", "8.3.1 Sludge Holding Tank - Lighting / Odour", "8.4.1 SBR Tank - Lighting / Odour", "8.4.2 Sequencing batch reactor (SBR) on/off", "8.4.3 Recirculation pump", "8.5.1 Filter Press Room - Odour / Dust / Ventilation fan", "9.1 Container access cleanliness / Roller shutter", "9.2 Lighting / Odour", "9.3 Air Curtain / Atomising system", "10.1 Vessel name", "10.2 Berth area cleanliness / Atomising System", "10.3 Traffic smoothness", "10.4 Container stockpile", "10.5 Container handling unit (CHU)", "11.1 Spiral ramp cleanliness / Lighting", "11.2 Traffic smoothness", "11.3 Auto Cleaning System", "12.1 Road sweeper cleaning streets", "12.2 Road sweeper cleaning site area", "12.3 Odour Monitoring System", "Non-operation hours (2330-0730)", "Ventilation fans", "Mainfan NEF 2 (Hz)", "Mainfan NEF 3 (Hz)", "Tipping Hall (NSF 1)", "Dry Scrubber A", "Dry Scrubber B", "Dry Scrubber C", "Compactor Hall (NSF 4)", "WWTP EEF 13", "WWTP EEF 14 (standby)", "WWTP ESF 15", "Shift Start Time", "Shift End Time", "Supervisor", "Mobile plant operator", "Station operator", "Maintenance technician", "Semiskilled worker", "WWTP operator", "Labour", "Livefloor operator", "Weighbridge operator", "PART II - Weighbridge Operation Checked by", "PART II - Daily waste transaction record checked", "PART II - Weighbridge Time", "PART II - Overall system normal", "PART II - Weighbridge Remark", "PART II - Vehicle Turnaround Time within contract", "PART II - Queuing off-site observed", "PART II - Turnaround Remark", "PART II - Waste Inspection Inspected by", "PART II - Waste Inspection Vehicle No.", "PART II - Waste Inspection Time / Location", "PART II - Permitted Waste", "PART II - Tipping Inspected by", "PART II - Waste handling properly", "PART II - Tipping Time / Location", "PART II - Tipping Remark", "PART II - Leakage Recorded by", "PART II - Leakage Time / Location", "PART II - Leakage Caused by", "PART II - Leakage Remark", "PART II - Vehicle Wash Inspected by", "PART II - Vehicle properly cleaned", "PART II - Vehicle Wash Time", "PART II - Vehicle Wash Vehicle No.", "PART II - Machinery Inspected by", "PART II - Machinery Time / Location", "PART II - Machinery Remark", "PART II - Litter Inspected by", "PART II - Litter Time / Location", "PART II - Litter Remark", "PART II - Air Monitoring Conducted by", "PART II - Air Sampling from", "PART II - Air Witnessed by", "PART II - Air Time", "PART II - Air Remark", "PART II - Noise Conducted by", "PART II - Noise Measuring Point", "PART II - Noise Witnessed by", "PART II - Sound Level Meter Calibration", "PART II - Noise Time", "PART II - Noise Remark", "PART II - Water Sampling Conducted by", "PART II - Sampling guidelines followed", "PART II - Water Witnessed by", "PART II - Water Sampling Point", "PART II - Water Time", "PART II - Water Remark", "PART II - Sludge Conducted by", "PART II - Sludge Witnessed by", "PART II - Sludge Time", "PART II - Sludge Remark", "PART II - Pest Control Conducted by", "PART II - Pest Control Witnessed by", "PART II - Pest Control Time", "PART II - Pest Control Remark", "Timestamp"],
+        stts: ["Inspection Date", "Inspected By", "Shift / Time", "Weather", "Checked By", "1. Industrial Water Meter Reading", "2. Waste Water Discharge Flow Meter Reading", "3. Weighbridge CPU", "4. Status of Weighbridge No.1", "4. Status of Weighbridge No.2", "4. Status of Weighbridge No.3", "5. Drop Barrier / Traffic Light No.1", "5. Drop Barrier / Traffic Light No.2", "5. Drop Barrier / Traffic Light No.3", "6. CCTV No.1 (IN/OUT)", "6. CCTV No.2 (IN/OUT)", "6. CCTV No.3 (IN/OUT)", "7. No. of Weighbridge Operator", "8. VOID or MANUAL ticket", "9. Water Spraying / Brushing", "10. Drop Barrier / Traffic Light", "11. Recycling Water System Room", "12. Live floor No.1", "12. Live floor No.2", "12. Live floor No.3", "13. Ventilation Fan No.1", "13. Ventilation Fan No.2", "14A. No. of Control Operator", "14B. No. of Tipper Hall Assistant", "15. Lighting", "16. Traffic Light Indicator (Entrance)", "16A. Unloading Bays (Front / Rear)", "17. Water Spray nozzles", "18. Bulky Waste Shredder", "19. Cleanliness of tipping area", "20. Final Scrubber No.1", "20. Final Scrubber No.2", "20A. Data Logger (Final Scrubber)", "21. Main Fan No.1", "21. Main Fan No.2", "21. Main Fan No.3", "21A. Data Logger (Main Fan)", "22. Compactor No.1", "22. Compactor No.2", "22. Compactor No.3", "23. Chemicals Waste Storage (Properly stored)", "23A. Chemicals Waste Storage (Any spillage)", "24. Lighting", "25. Filter Press Unit", "26. No. of Compactor Operator", "26B. No. of Compactor Hall Assistant", "27. Status of Aeration Tank SBR1", "27. Status of Aeration Tank SBR2", "28. Venturi Scrubber Pump P1", "28. Venturi Scrubber Pump P2", "29. Filter Press Unit", "30. Lighting", "31. Buffer Tank with Wastewater", "32. Discharge of Wastewater", "33. Data Logger / Panel Display", "34. Record of Loaded Trailers - Compactor Hall", "35. Record of Loaded Trailers - Open Area", "36. Malpractice - By-pass Weighbridge", "37. Malpractice - By-pass Vehicle Wash", "38. Malpractice - Fast Speed", "39. Malpractice - Leachate Dripping", "40. CCTV - Main Entrance & Exit", "41. CCTV - Open Area around Weighbridges", "42. CCTV - Back Yard Area", "43. CCTV - Wastewater Treatment Plant", "44. CCTV - Compactor Hall", "45. CCTV - Workshop", "46. CCTV - Tipping Hall", "OEP-1: Vehicle Turnaround Time > 25 min", "OEP-2: Queuing of RCVs outside the Station", "OEP-3: Vehicle Washing House", "OEP-4: Spillage of Refuse at any External Location & Not Properly Removed within 30 min", "OEP-5: Spillage of Refuse/Leakage of Leachate from Trailer", "OEP-6: Abnormal Noise", "OEP-7: Waste Inspection", "OEP-8: Cleansing of the Cleansing Area (4 times per day)", "OEP-9: No. of Highway Tractor (Operate / Idle)", "OEP-10: Highway Tractor (ST#) in Maintenance", "OEP-11: No. of Yard Tractor (Operate / Maintenance / Idle)", "OEP-12: Trailer (C#) in Maintenance", "OEP-13: Cleanliness of Tractors and Trailers Body", "OEP-14: Bobcat / Sweeper / Scrubber Drier", "OEP-15: No. of backhoe loader (JCB) operate at tipping hall", "OEP-16: Storm Drain Channel / Catchpit Condition", "OEP-17: Wastewater Sample Lab", "OEP-17: Wastewater Sample Time", "OEP-18: Storm Water Sample Lab", "OEP-18: Storm Water Sample Time", "OEP-19: Influent Sample Time", "OEP-20: Sludge Cake Lab", "OEP-20: Sludge Cake Time", "OEP-21: RSP Time", "OEP-22: Noise Measurement Time", "OEP-23: CO & NO2 Time", "OEP-24: Odour Patrol Time", "OEP-24: Mal-odour detected (0-4)", "OEP-25: Pest/Rodent Breeding Places (Time)", "OEP-26: Pest/Rodent Control Fogging Time", "OEP-27: Black Smoke Time", "OEP-28: Operation Manager", "OEP-29: Officer / Guest Visited STTS", "RCV Vehicle No(s).", "V Type", "Waste Type", "TICKET NO.", "Container Cleaned", "Spot Check Remarks", "General Remarks", "Timestamp"],
+        oitf: ["Date", "Inspected By", "Time", "Weather", "WB No.1", "WB No.2", "WB No.3", "WB No.4", "CCTV/ Recording System", "Weight Display correctness", "Bridge Vehicle No.", "Type/ Origin", "Permitted waste?", "Any off-site queuing?", "Inspected by EPD", "Inspected by CHEC", "Tipping Vehicle No.", "Waste Type", "Permitted Waste", "Traffic control signal", "CCTV system", "Filter Press", "C1", "Container No. (C1)", "C2", "Container No. (C2)", "C3", "Container No. (C3)", "C4", "Container No. (C4)", "C5", "Container No. (C5)", "C6", "Container No. (C6)", "C7", "Container No. (C7)", "C8", "Container No. (C8)", "Screen 1", "Screen 2", "Screen 3", "Tank 1A", "Tank 1B", "Tank 2A", "Tank 2B", "DAF 1", "DAF 2", "GTW Area", "Crane 1", "Crane 2", "CHU 1", "CHU 2", "145B", "550FV", "155WV", "Others", "Lai Wan", "Ngon Shuen", "Vehicle Wash 1", "Vehicle Wash 2", "Cleanliness", ">30 mins", "Offsite >24 hrs", "Air Curtain", "Scrubber 1", "Scrubber 2", "Scrubber 3", "Scrubber 4", "Scrubber 5", "Acid Stage 1", "Acid Stage 2", "Acid Stage 4", "Acid Stage 5", "Alk Stage 1", "Alk Stage 2", "Alk Stage 3", "Alk Stage 4", "Alk Stage 5", "ORP Range 1", "ORP Range 2", "ORP Range 3", "ORP Range 4", "ORP Range 5", "Before Treatment", "Anaerobic Tanks", "T300", "T401", "T402", "T403", "T404", "Final Clarifier", "Filter Press", "Biogas Tank", "Penstock", "Remarks 1", "Remarks 2", "Remarks 3", "Remarks 4", "PLC Condition", "Pre Treatment", "Penstock Status", "AerobicS", "AT401", "AT402", "AT403", "AT404", "AnaerobicS", "ApH", "ATemp", "ADO", "ABiogas", "Post-Treatment", "Centrifuge", "Wetsep", "Marine Vessel", "Storm", "VWF", "Rundown", "101", "100", "313", "312", "410", "413", "Public", "Road", "Marine", "Scrubbers", "VWS", "401 DO", "402 DO", "403 DO", "404 DO", "401 Temp", "402 Temp", "403 Temp", "404 Temp", "404 pH", "Number of Containers Completed", "Wheelstopper Conditions", "Wheelstopper Conditions (Remarks)", "DG Storage", "C6A", "Container No. (C6A)"],
+        nlts: ["Date", "Inspected By", "Time", "Day", "Weather AM", "Weather PM", "Typhoon No.", "Typhoon Hoisted On", "Rainstorm Black Issued", "A1. Weighbridge (1/2)", "A2. Traffic Light / Display", "A3. Computer System (1/2)", "A4. CCTV / Video Record System", "A5. Cancel Ticket", "A5. Amended Ticket", "A5. Manual Ticket", "A6. Weighbridge Cleanliness", "B1. Vehicle Wash / Recycle Water Plant", "B2. Traffic Light / Malodour Identify", "C1. Traffic light Indicator / Lighting intensity", "C2. Water Nozzles / Lighting devices", "C3. Ventilation", "C4. Air Scrubber 1", "C4. Air Scrubber 2", "C4. Air Scrubber 3", "C4. Air Scrubber 4", "C5. Bulky Waste Disposal Area", "C6. Moving Floors (1/2/3/4)", "C7. Wheel Stopper", "C8. Unloading activity", "C9. Manpower", "C10. Cleanliness", "D1. CCTV System / PA System", "D2. Manpower", "E1. Compactors (1/2/3/4)", "E2. Chemical Waste Compliance", "E3. Cleanliness", "F1. Lighting intensity", "F2. Marine Vessels Docked", "F2. Left before", "F2. Return before", "F3. Loaded Container for Overnight Storage", "F4. Cleanliness", "G1. Cleanliness", "H1. Container under repair", "H1. Container complied with quality check", "I1. Small Loader XCMG XC7-SR07", "I2. Backhoe Loader SHANMON 388 (SHAN1/SHAN2)", "I3. Road Sweeper ZC6456", "I4. Container Handling Unit (CHU1/CHU2)", "I5. Yard Tractor Terberg (YT1/YT2/YT3)", "I6. Container Trailer (NLT 01-05)", "I7. Any black smoke generated", "Supervisor", "Driver", "Labour", "Weighbridge Operator", "Maintenance", "WWTP Operator", "Record of refuse trapped at container doors", "Record of leachate dripping containers", "Cleaning of streets by", "Cleanliness condition along streets", "If poor, state location", "Any blockage of surface channel", "If Y, state location", "OD1 - Intensity", "OD2 - Intensity", "OD3 - Intensity", "OD4 - Intensity", "OD5 - Intensity", "Wind direction", "Odour Weather", "K1. Off Site Litter Control Cleanliness", "L1. Any WCVs queuing outside", "L1. Max. No.", "L1. Time Period", "L2. Any WCVs broken down", "L2. Vehicle No.", "L2. Time Period", "L3. Random waste inspection by Contractor", "L3. Vehicle No.", "M1. Air-NO2, CO Location", "M1. Air-NO2, CO Time", "M2. Noise Level Location", "M2. Noise Level Time", "M3. Odour patrol by Contractor (Done by)", "N1. SBR1 Time", "N1. SBR1 Qty (L)", "N1. SBR2 Time", "N1. SBR2 Qty (L)", "N1. Storm Time", "N1. Storm Qty (L)", "N1. Sludge Time", "N1. Sludge Qty (g)", "N1. Foul Time", "N1. Foul Qty (L)", "O1. Fine Screen / Distribution Tank", "O2. SBR1 Status", "O2. SBR1 pH", "O2. SBR1 DO", "O2. SBR1 TSS", "O3. SBR2 Status", "O3. SBR2 pH", "O3. SBR2 DO", "O3. SBR2 TSS", "O4. Sludge Conditioning / Thickening Tank", "O5. Filter Press", "O6. Penstock Chamber", "O6. If manual closed - Reasons", "O6. If manual closed - Time Period", "O7. Flow meter reading AM (m³)", "O7. Flow meter reading PM (m³)", "O7. Flow meter reading Discharged (m³)", "O8. Malodour Identify / Ventilation", "O9. Cleanliness", "O10. Gas Detectors - Hydrogen Sulphide", "O10. Gas Detectors - Carbon Monoxide", "O10. Gas Detectors - Ammonia", "O10. Methane CH1", "O10. Methane CH2", "O10. Methane CH3", "P) Vehicle No.", "P) Time", "P) Source", "P) Classified", "P) Officer", "Diary - CCTV video playback checked by", "Diary - CCTV video playback date", "Diary - RCV Time in (hrs)", "Diary - RCV Gross time (hrs)", "Diary - RCV Tare time (hrs)", "Diary - RCV Time left (hrs)", "Diary - RCV Total time (mins)", "Diary - Remarks / Additional Notes", "Timestamp"]
     };
     
-    // ========== STATION-SPECIFIC FIELD TO COLUMN MAPPING ==========
-    const stationFieldMap = {
-        wkts: {
-            "Date": 0, "Inspected By": 1, "Time": 2, "Weather": 3,
-            "WB No.1": 4, "WB No.2": 5, "WB No.3": 6, "WB No.4": 7,
-            "CCTV/ Recording System": 8, "Weight Display correctness": 9,
-            "Bridge Vehicle No.": 10, "Type/ Origin": 11, "Permitted waste?": 12, "Any off-site queuing?": 13,
-            "Inspected by EPD": 14, "Inspected by CHEC": 15,
-            "Tipping Vehicle No.": 16, "Waste Type": 17, "Permitted Waste": 18,
-            "Traffic control signal": 19, "CCTV system": 20,
-            "Filter Press Value": 21,
-            "Status C1": 22, "C1": 23, "Status C2": 24, "C2": 25, "MF1": 26,
-            "Status C3": 27, "C3": 28, "MF2": 29, "Status C4": 30, "C4": 31, "MF3": 32,
-            "Status C5": 33, "C5": 34, "MF4": 35, "Status C6": 36, "C6": 37, "MF5": 38,
-            "Status C7": 39, "C7": 40, "MF6": 41, "Status C8": 42, "C8": 43,
-            "Status C9": 44, "C9": 45, "Status C10": 46, "C10": 47,
-            "Screen 1": 48, "Screen 2": 49, "Screen 3": 50,
-            "1A": 51, "1B": 52, "2A": 53, "2B": 54,
-            "DAF 1": 55, "DAF 2": 56, "Area Cleaned": 57,
-            "Crane 1": 58, "Crane 2": 59, "CHU 1": 60, "CHU 2": 61,
-            "145B": 62, "55FV": 63, "155WD": 64, "Others": 65,
-            "Lai Wan": 66, "Ngon Shuen": 67,
-            "Vehicle Wash 1": 68, "Vehicle Wash 2": 69, "Vehicle Wash 3": 70,
-            "VW Clean ?": 71, "Waste clearance > 30 mins? ": 72, "Off-site litter > 24 hrs? ": 73,
-            "Air Curtain": 74,
-            "Scrubber 1": 75, "Scrubber 2": 76, "Scrubber 3": 77, "Scrubber 4": 78, "Scrubber 5": 79,
-            "Acid Scrubber 1": 80, "Acid Scrubber 2": 81, "Acid Scrubber 4": 82, "Acid Scrubber 5": 83,
-            "Alk Scrubber 1": 84, "Alk Scrubber 2": 85, "Alk Scrubber 3": 86, "Alk Scrubber 4": 87, "Alk Scrubber 5": 88,
-            "ORP 1": 89, "ORP 2": 90, "ORP 3": 91, "ORP 4": 92, "ORP 5": 93,
-            "Before Treatment ": 94, "Anaerobic Tanks": 95,
-            "Aerobic Tank T300": 96, "Aerobic Tank T401": 97, "Aerobic Tank T402": 98, "Aerobic Tank T403": 99, "Aerobic Tank T404": 100,
-            "Final Clarifer": 101, "Filter Press Status": 102, "Bigas Tank": 103, "Penstock": 104,
-            "Remarks1": 105, "Remarks2": 106, "Remarks3": 107, "Remarks 4": 108,
-            "PLC": 109, "Pre-Treat": 110, "Penstock Chamber": 111, "Aerobic Status": 112,
-            "T-401": 113, "T-402": 114, "T-403": 115, "T-404": 116,
-            "Anaerobic Status": 117, "pH": 118, "Temp": 119, "DO": 120, "Biogas Level": 121,
-            "Post-Treatment Status": 122, "Centrifuge": 123,
-            "Wetsep": 124, "Marine Vessel": 125, "Storm water": 126, "VWF wastewater": 127,
-            "Rundown Screen": 128,
-            "FIQT -101": 129, "FIQT -100": 130, "FIT-313": 131, "FIT-312": 132, "T410": 133, "FIT-413": 134,
-            "Public": 135, "Road Wash": 136, "Marine": 137, "Scrubbers": 138, "VWS": 139,
-            "DO T-401": 140, "DO T-402": 141, "DO T-403": 142, "DO T-404": 143,
-            "Temp T-401": 144, "Temp T-402": 145, "Temp T-403": 146, "Temp T-404": 147,
-            "pH T-404": 148,
-            "Number of Containers Completed": 149,
-            "Wheelstopper Conditions": 150, "Wheelstopper Conditions (Remarks)": 151,
-            "DG Storage": 152,
-            "Status C6A": 153, "C6A": 154
-        },
-        nwnt: {},
-        iets: {},
-        iwts: {},
-        stts: {},
-        oitf: {},
-        nlts: {}
-    };
-    
-    const stationSelect = document.getElementById('stationSelect');
     const dateSelect = document.getElementById('dateSelect');
     const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
     const downloadDataBtn = document.getElementById('downloadDataBtn');
     const statusDiv = document.getElementById('status');
-    const dataPreviewDiv = document.getElementById('dataPreview');
-    const instructionsDiv = document.getElementById('instructions');
     
-    // Set default date to today
-    const today = new Date().toISOString().split('T')[0];
-    dateSelect.value = today;
+    dateSelect.value = new Date().toISOString().split('T')[0];
+    
+    if (sessionToken && userStation && userPost) { showWorkspace(); }
+
+    window.toggleOfficerNameInput = function() {
+        document.getElementById('officerNameGroup').classList.toggle('hidden', document.getElementById('loginPost').value !== 'Operator');
+    }
     
     function showStatus(message, type) {
         statusDiv.textContent = message;
         statusDiv.className = `status ${type}`;
-        setTimeout(() => {
-            if (statusDiv.textContent === message) statusDiv.style.display = 'none';
-        }, 8000);
     }
-    
-    // Download Template from R2
-    async function downloadTemplate() {
-        const stationId = stationSelect.value;
-        
-        if (!stationId) {
-            showStatus('Please select a station', 'error');
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+        const stationId = document.getElementById('loginStation').value;
+        const post = document.getElementById('loginPost').value;
+        const password = document.getElementById('loginPassword').value;
+        const inputName = document.getElementById('loginOfficerName').value.trim();
+        const loginStatus = document.getElementById('loginStatus');
+
+        if (!stationId || !post || !password || (post === 'Operator' && !inputName)) {
+            loginStatus.textContent = 'Please populate all entry selection options.';
+            loginStatus.style.display = 'block';
             return;
         }
+
+        try {
+            const response = await fetch(`${WORKER_URL}/api/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stationId, post, password })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                localStorage.setItem('sessionToken', result.token);
+                localStorage.setItem('userStation', stationId);
+                localStorage.setItem('userPost', post);
+                localStorage.setItem('officerName', post === 'Supervisor' ? 'Supervisor' : inputName);
+                
+                userStation = stationId; userPost = post; officerName = post === 'Supervisor' ? 'Supervisor' : inputName; sessionToken = result.token;
+                loginStatus.style.display = 'none';
+                showWorkspace();
+            } else { throw new Error(result.error || 'Access authentication failed.'); }
+        } catch (err) { loginStatus.textContent = err.message; loginStatus.style.display = 'block'; }
+    });
+
+    function showWorkspace() {
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('mainWorkspace').classList.remove('hidden');
+        
+        const identityString = userPost === 'Supervisor' ? 'Supervisor (Super Admin)' : `Officer: ${officerName}`;
+        document.getElementById('userDisplay').textContent = `${identityString}`;
+        
+        const fieldWrapper = document.getElementById('stationFieldWrapper');
+        
+        // 📍 DYNAMIC STATION SELECTION CONTEXT
+        if (userPost === 'Supervisor') {
+            fieldWrapper.innerHTML = `
+                <label>📍 Operations Station Selection (Super Admin Override)</label>
+                <select id="stationSelect">
+                    <option value="wkts">WKTS (West Kowloon Transfer Station)</option>
+                    <option value="nwnt">NWNTTS (North West New Territories)</option>
+                    <option value="iets">IETS (Island East Transfer Station)</option>
+                    <option value="iwts">IWTS (Island West Transfer Station)</option>
+                    <option value="stts">STTS (Shatin Transfer Station)</option>
+                    <option value="oitf">OITF (Outlying Islands Transfer Facility)</option>
+                    <option value="nlts">NLTS (North Lantau Transfer Station)</option>
+                </select>
+            `;
+            document.getElementById('stationSelect').value = userStation;
+        } else {
+            fieldWrapper.innerHTML = `
+                <label>📍 Logged Operations Station Context</label>
+                <input type="text" id="stationSelect" data-locked-val="${userStation}" value="${userStation.toUpperCase()}" disabled style="background:#f3f4f6; font-weight:bold; color:#1a1a2e;">
+            `;
+        }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.reload(); });
+    
+    // Download Template from Cloud R2 Registry
+    async function downloadTemplate() {
+        const stationPicker = document.getElementById('stationSelect');
+        const stationId = stationPicker.tagName === 'SELECT' ? stationPicker.value : stationPicker.getAttribute('data-locked-val');
+        
+        if (!stationId) { showStatus('Please select a station', 'error'); return; }
         
         downloadTemplateBtn.disabled = true;
         downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading...';
         
         try {
             const response = await fetch(`${WORKER_URL}/api/get-template?station=${stationId}`);
-            
-            if (!response.ok) {
-                throw new Error(`Template not found for ${stationId.toUpperCase()}`);
-            }
+            if (!response.ok) throw new Error(`Template not found for ${stationId.toUpperCase()}`);
             
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            
-            const contentDisposition = response.headers.get('Content-Disposition');
-            let filename = `${stationId.toUpperCase()}_Master_Template.xlsm`;
-            if (contentDisposition) {
-                const match = contentDisposition.match(/filename="?([^"]+)"?/);
-                if (match) filename = match[1];
-            }
-            
-            a.download = filename;
+            a.download = `${stationId.toUpperCase()}_Master_Template.xlsm`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            
-            showStatus(`✅ ${stationId.toUpperCase()} template downloaded!`, 'success');
-            instructionsDiv.classList.add('show');
-            
-        } catch (error) {
-            showStatus(`❌ Error: ${error.message}`, 'error');
-        } finally {
-            downloadTemplateBtn.disabled = false;
-            downloadTemplateBtn.innerHTML = '📁 Download Template';
-        }
+            showStatus(`✅ ${stationId.toUpperCase()} master template downloaded!`, 'success');
+        } catch (error) { showStatus(`❌ Error: ${error.message}`, 'error'); } 
+        finally { downloadTemplateBtn.disabled = false; downloadTemplateBtn.innerHTML = '📁 Download Template'; }
     }
-    
-    // Download Inspection Data
+
+    // ========== 📥 UNFILTERED MASTER EXCEL DATA DOWNLOAD ROUTINE ==========
     async function downloadData() {
-        const stationId = stationSelect.value;
+        const stationPicker = document.getElementById('stationSelect');
+        const stationId = stationPicker.tagName === 'SELECT' ? stationPicker.value : stationPicker.getAttribute('data-locked-val');
         const date = dateSelect.value;
         
-        if (!stationId) {
-            showStatus('Please select a station', 'error');
-            return;
-        }
-        
-        if (!date) {
-            showStatus('Please select a date', 'error');
-            return;
-        }
+        if (!stationId || !date) { showStatus('Please populate station and date criteria entries.', 'error'); return; }
         
         const headers = stationHeaders[stationId];
-        const fieldMap = stationFieldMap[stationId];
-        
-        if (!headers || headers.length === 0) {
-            showStatus(`Headers not configured for ${stationId.toUpperCase()}. Please contact administrator.`, 'error');
-            return;
-        }
-        
         downloadDataBtn.disabled = true;
-        downloadDataBtn.innerHTML = '<span class="loading-spinner"></span> Fetching data...';
-        dataPreviewDiv.classList.remove('show');
+        downloadDataBtn.innerHTML = '<span class="loading-spinner"></span> Extracting...';
         
         try {
-            showStatus('📡 Fetching inspection records...', 'info');
-            
             const [year, month, day] = date.split('-');
-            const selectedDateDDMMYYYY = `${day}/${month}/${year}`;
-            const yearMonth = date.substring(0, 4) + date.substring(5, 7);
+            const targetDateDDMMYYYY = `${day}/${month}/${year}`;
             
             const response = await fetch(`${WORKER_URL}/api/get-inspections`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ stationId: stationId, yearMonth: yearMonth })
+                body: JSON.stringify({ stationId, yearMonth: year + month })
             });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
             
             const result = await response.json();
+            if (!result.success) throw new Error(result.error);
             
-            if (!result.success) {
-                throw new Error(result.error || 'Failed to fetch inspections');
-            }
-            
-            if (result.count === 0) {
-                showStatus(`⚠️ No inspection records found for ${yearMonth}`, 'warning');
-                return;
-            }
-            
-            // Filter inspections by exact date
-            const filteredInspections = result.inspections.filter(insp => {
-                let inspDate = insp.Date || insp["Inspection Date"] || insp._metadata?.inspectionDate || insp.date;
-                if (inspDate) {
-                    if (inspDate.includes('T')) inspDate = inspDate.split('T')[0];
-                    if (inspDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                        const [y, m, d] = inspDate.split('-');
-                        inspDate = `${d}/${m}/${y}`;
-                    }
-                    return inspDate === selectedDateDDMMYYYY;
+            // Filter strictly by target calendar date matching
+            currentFilteredArray = result.inspections.filter(insp => {
+                let d = insp.Date || insp["Inspection Date"] || insp.date;
+                if (d && d.includes('T')) d = d.split('T')[0];
+                if (d && d.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    const [y, m, dayPart] = d.split('-'); d = `${dayPart}/${m}/${y}`;
                 }
-                return false;
+                return d === targetDateDDMMYYYY;
             });
             
-            if (filteredInspections.length === 0) {
-                showStatus(`⚠️ No inspections found for ${selectedDateDDMMYYYY}`, 'warning');
+            if (currentFilteredArray.length === 0) {
+                showStatus(`⚠️ No operational records found for this date context.`, 'warning');
+                document.getElementById('correctionSection').style.display = "none";
                 return;
             }
             
-            showStatus(`✅ Found ${filteredInspections.length} record(s)`, 'success');
+            showStatus(`✅ Download compiled! Generated ${currentFilteredArray.length} total rows.`, 'success');
             
-            // Build worksheet data using station-specific headers
+            // 🔄 Build Excel sheet array - 100% UNFILTERED AS ORIGINAL
             const worksheetData = [headers];
-            
-            for (const insp of filteredInspections) {
+            for (const insp of currentFilteredArray) {
                 const row = new Array(headers.length).fill('');
                 for (const [jsonKey, value] of Object.entries(insp)) {
-                    if (jsonKey.startsWith('_') || jsonKey === 'undefined' || jsonKey === 'timestamp') continue;
-                    // Find header index by matching the key directly
-                    const headerIndex = headers.findIndex(h => h === jsonKey);
-                    if (headerIndex !== -1 && value !== undefined && value !== null && value !== '') {
+                    if (jsonKey.startsWith('_') || jsonKey === 'timestamp') continue;
+                    const headerIndex = headers.indexOf(jsonKey);
+                    if (headerIndex !== -1 && value !== undefined && value !== null) {
                         row[headerIndex] = value;
                     }
                 }
                 worksheetData.push(row);
             }
             
-            // Create workbook
             const workbook = XLSX.utils.book_new();
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
             worksheet['!cols'] = headers.map(() => ({ wch: 18 }));
@@ -867,43 +331,74 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${stationId}_${date}_inspection_data.xlsx`;
+            a.download = `${stationId}_${date}_inspection_records.xlsx`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            // Show preview
-            const previewRows = worksheetData.slice(0, Math.min(worksheetData.length, 6));
-            const previewText = previewRows.map(row => row.slice(0, 5).join(',')).join('\n');
-            dataPreviewDiv.innerHTML = `
-                <strong>📄 Data Preview (first ${Math.min(worksheetData.length, 6)} rows, first 5 columns):</strong><br>
-                <code style="font-size: 10px;">${previewText.substring(0, 800)}...</code><br>
-                <hr>
-                <strong>Station: ${stationId.toUpperCase()}</strong><br>
-                <strong>Total records: ${filteredInspections.length}</strong><br>
-                <strong>Total columns: ${headers.length}</strong>
-            `;
-            dataPreviewDiv.classList.add('show');
+            // Render the correction form grid interface below
+            buildRectificationGrid(headers, currentFilteredArray, stationId);
             
-            showStatus(`✅ Excel file downloaded! ${filteredInspections.length} record(s) ready to copy.`, 'success');
-            instructionsDiv.classList.add('show');
-            
-        } catch (error) {
-            console.error('Error:', error);
-            showStatus(`❌ Error: ${error.message}`, 'error');
-        } finally {
-            downloadDataBtn.disabled = false;
-            downloadDataBtn.innerHTML = '📥 Download Inspection Data';
-        }
+        } catch (error) { showStatus(`❌ Extraction Error: ${error.message}`, 'error'); } 
+        finally { downloadDataBtn.disabled = false; downloadDataBtn.innerHTML = '📥 Download Inspection Data'; }
     }
-    
+
+    // Grid output renderer showing ALL records cleanly
+    function buildRectificationGrid(headers, records, stationId) {
+        const headerRow = document.getElementById('gridHeaderRow');
+        const bodyRow = document.getElementById('gridBodyRow');
+        headerRow.innerHTML = '<th>Action Trigger</th>';
+        bodyRow.innerHTML = '';
+
+        headers.forEach(h => headerRow.innerHTML += `<th>${h}</th>`);
+
+        records.forEach((record, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><button class="btn-primary" style="padding:5px 10px; font-size:11px;" onclick="executeRectification(${index}, '${stationId}')">Submit</button></td>`;
+            
+            headers.forEach(field => {
+                const val = record[field] !== undefined ? record[field] : '';
+                tr.innerHTML += `<td><input type="text" class="grid-cell-input" data-row="${index}" data-field="${field}" value="${val}"></td>`;
+            });
+            bodyRow.appendChild(tr);
+        });
+        document.getElementById('correctionSection').style.display = "block";
+    }
+
+    // ========== ✏️ ROW-LEVEL ALTER SECURITY VALIDATOR ==========
+    window.executeRectification = async function(rowIndex, stationId) {
+        let targetRecord = currentFilteredArray[rowIndex];
+        
+        // 🔒 IDENTITY FORM OWNERSHIP VALIDATION
+        if (userPost === 'Operator') {
+            const originalRecordInspector = targetRecord["Inspected By"] || targetRecord["Inspection Date"] ? targetRecord["Inspected By"] : targetRecord.inspectedBy || "";
+            if (originalRecordInspector.trim().toLowerCase() !== officerName.trim().toLowerCase()) {
+                showStatus(`❌ Access Denied: As an Officer, you are only permitted to alter your own form records! (Record authored by: "${originalRecordInspector}")`, 'error');
+                return;
+            }
+        }
+        
+        const rowInputs = document.querySelectorAll(`.grid-cell-input[data-row="${rowIndex}"]`);
+        rowInputs.forEach(input => {
+            const fieldKey = input.getAttribute('data-field');
+            targetRecord[fieldKey] = input.value;
+        });
+
+        try {
+            const response = await fetch(`${WORKER_URL}/api/update-inspection`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stationId, record: targetRecord })
+            });
+            const outcome = await response.json();
+            if (outcome.success) { showStatus('✅ Record cleanly updated inside the cloud R2 registry!', 'success'); } 
+            else { throw new Error(outcome.error); }
+        } catch(err) { showStatus(`❌ Modification Failure: ${err.message}`, 'error'); }
+    };
+
     downloadTemplateBtn.addEventListener('click', downloadTemplate);
     downloadDataBtn.addEventListener('click', downloadData);
-    
-    setTimeout(() => {
-        instructionsDiv.classList.add('show');
-    }, 500);
 </script>
 </body>
 </html>
