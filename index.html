@@ -27,7 +27,9 @@
         .btn-warning { background: #d97706; color: white; }
         .btn-warning:hover:not(:disabled) { background: #b45309; }
         .button-group { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
-        .button-group button { flex: 1; min-width: 160px; }
+        .button-group button { flex: 1; min-width: 200px; }
+        .date-range-group { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+        .date-range-group .form-group { flex: 1; margin-bottom: 0; }
         .status { margin-top: 20px; padding: 14px 18px; border-radius: 10px; font-size: 14px; display: none; }
         .status.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; display: block; }
         .status.error { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; display: block; }
@@ -44,17 +46,27 @@
         .rectify-table tr.editable-row:hover { background: #f0fdf4; }
         .grid-cell-input { padding: 6px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 140px; }
         .grid-cell-input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
-        .readonly-badge { display: inline-block; background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
-        .editable-badge { display: inline-block; background: #059669; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
         .hidden { display: none !important; }
         .login-card { max-width: 460px; margin: 80px auto; background: white; padding: 40px; border-radius: 16px; }
         .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .note { background: #fef3c7; border-left: 4px solid #d97706; padding: 14px; font-size: 13px; color: #92400e; margin-top: 25px; border-radius: 6px; }
+        .instruction-steps { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-top: 25px; }
+        .instruction-steps h4 { color: #1e293b; margin-bottom: 15px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .instruction-steps ol { margin-left: 20px; line-height: 1.8; color: #334155; }
+        .instruction-steps li { margin-bottom: 8px; }
+        .instruction-steps strong { color: #1e40af; }
+        .instruction-steps .print-icon { font-size: 18px; }
         .role-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: 10px; }
         .role-officer { background: #dbeafe; color: #1e40af; }
         .role-admin { background: #fef3c7; color: #92400e; }
         .permission-info { background: #f1f5f9; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .export-options { background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .export-options h4 { margin-bottom: 15px; color: #1e293b; font-size: 16px; }
+        .divider { height: 1px; background: #e2e8f0; margin: 20px 0; }
+        .change-log { background: #1e1e2e; color: #cdd6f4; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 11px; max-height: 150px; overflow-y: auto; margin-top: 15px; display: none; }
+        .change-log.show { display: block; }
+        .change-log-title { cursor: pointer; user-select: none; font-size: 12px; color: #4b5563; margin-top: 10px; display: inline-block; }
+        .change-log-title:hover { color: #2563eb; }
     </style>
 </head>
 <body>
@@ -113,13 +125,31 @@
         </div>
         
         <div class="form-group">
-            <label>📅 Filter by Date (optional - leave empty to see all records)</label>
+            <label>📅 Filter by Single Date (optional)</label>
             <input type="date" id="dateSelect">
+        </div>
+        
+        <div class="export-options">
+            <h4>📊 Export Date Range</h4>
+            <div class="date-range-group">
+                <div class="form-group">
+                    <label>From Date</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="form-group">
+                    <label>To Date</label>
+                    <input type="date" id="endDate">
+                </div>
+                <div class="form-group" style="flex: 0.5; min-width: 120px;">
+                    <label>&nbsp;</label>
+                    <button id="exportRangeBtn" class="btn-warning" style="width:100%;">📊 Export Date Range</button>
+                </div>
+            </div>
         </div>
         
         <div class="button-group">
             <button id="showRecordsBtn" class="btn-info">🔍 Show Records</button>
-            <button id="downloadDataBtn" class="btn-primary">📥 Download Excel</button>
+            <button id="downloadDataBtn" class="btn-primary">📥 Download Inspection Data</button>
             <button id="downloadTemplateBtn" class="btn-secondary">📁 Download Template</button>
         </div>
         
@@ -140,10 +170,26 @@
             </div>
         </div>
 
-        <div class="note">
-            💡 <strong>Permission Rules:</strong><br>
-            • <strong>Officers (I(TD)-xx):</strong> Can ONLY edit records where "Inspected By" matches their Post ID.<br>
-            • <strong>Station Admins (SI(TD)-xx):</strong> Can edit ALL records for their station.
+        <!-- Change Log Section -->
+        <div>
+            <div class="change-log-title" onclick="toggleChangeLog()">📋 ▼ View Change Log (Record of who altered data)</div>
+            <div id="changeLog" class="change-log">
+                <strong>📝 Record Modification History</strong><br>
+                <div id="changeLogContent">No changes recorded yet.</div>
+            </div>
+        </div>
+
+        <!-- Updated Instructions -->
+        <div class="instruction-steps">
+            <h4>📄 <span>Printing Instructions</span></h4>
+            <ol>
+                <li><strong>Download Template (First Time Only)</strong> – Click Download Template to get the master Excel template for the selected station.</li>
+                <li><strong>Download Inspection Data</strong> – Click Download Inspection Data to get the inspection records for the selected station and date.</li>
+                <li><strong>Open Both Files</strong> – Open the downloaded template and the inspection data file.</li>
+                <li><strong>Copy Data</strong> – In the inspection data file, select all data cells from A2 to the last row/column, then press <strong>Ctrl+C</strong>.</li>
+                <li><strong>Paste to Print Worksheet</strong> – In the template file, go to the Print worksheet, select cell A6, then press <strong>Ctrl+V</strong>.</li>
+                <li><strong>✓ Print</strong> – Your data is now in the Print sheet. All formulas will auto-calculate. Review and print.</li>
+            </ol>
         </div>
     </div>
 </div>
@@ -168,8 +214,78 @@
     let currentRecords = [];
     let currentHeaders = [];
     let isAdmin = false;
+    let changeLogs = [];
 
-    if (sessionToken && userStation && userPost) showWorkspace();
+    // Load change logs from localStorage
+    function loadChangeLogs() {
+        const saved = localStorage.getItem(`changeLog_${userStation}`);
+        if (saved) {
+            changeLogs = JSON.parse(saved);
+            updateChangeLogDisplay();
+        }
+    }
+
+    // Save change log to localStorage
+    function saveChangeLog(entry) {
+        changeLogs.unshift(entry); // Add to beginning (newest first)
+        // Keep only last 100 entries
+        if (changeLogs.length > 100) changeLogs.pop();
+        localStorage.setItem(`changeLog_${userStation}`, JSON.stringify(changeLogs));
+        updateChangeLogDisplay();
+    }
+
+    // Add a change log entry
+    function addChangeLog(record, changedFields, oldValues, newValues) {
+        const entry = {
+            timestamp: new Date().toISOString(),
+            date: new Date().toLocaleString(),
+            user: userPost,
+            station: userStation,
+            recordDate: record.Date || record["Inspection Date"] || 'Unknown',
+            inspectedBy: record["Inspected By"] || 'Unknown',
+            changes: changedFields.map(field => ({
+                field: field,
+                oldValue: oldValues[field],
+                newValue: newValues[field]
+            }))
+        };
+        saveChangeLog(entry);
+    }
+
+    // Update the change log display
+    function updateChangeLogDisplay() {
+        const container = document.getElementById('changeLogContent');
+        if (!container) return;
+        
+        if (changeLogs.length === 0) {
+            container.innerHTML = 'No changes recorded yet.';
+            return;
+        }
+        
+        let html = '';
+        for (const log of changeLogs.slice(0, 50)) {
+            html += `
+                <div style="border-bottom: 1px solid #334155; padding: 8px 0; margin-bottom: 6px;">
+                    <div><strong>${log.timestamp}</strong> | User: <span style="color:#89b4fa;">${log.user}</span> | Station: ${log.station}</div>
+                    <div>Record Date: ${log.recordDate} | Inspector: ${log.inspectedBy}</div>
+                    <div style="font-size: 10px; color: #a6adc8;">
+                        Changes: ${log.changes.map(c => `${c.field}: "${c.oldValue}" → "${c.newValue}"`).join(', ')}
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    window.toggleChangeLog = function() {
+        const logDiv = document.getElementById('changeLog');
+        logDiv.classList.toggle('show');
+    };
+
+    if (sessionToken && userStation && userPost) {
+        showWorkspace();
+        loadChangeLogs();
+    }
 
     window.populatePostDropdown = function() {
         const stationEl = document.getElementById('loginStation');
@@ -228,6 +344,7 @@
                 userPost = post;
                 loginStatus.style.display = 'none';
                 showWorkspace();
+                loadChangeLogs();
             } else {
                 throw new Error(result.error || 'Authentication failed');
             }
@@ -241,7 +358,6 @@
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('mainWorkspace').classList.remove('hidden');
         
-        // Check if user is admin (post starts with SI(TD))
         isAdmin = userPost.startsWith('SI(TD)');
         
         document.getElementById('userDisplay').innerHTML = `${userPost} @ ${userStation}`;
@@ -256,13 +372,14 @@
         }
         
         const fieldWrapper = document.getElementById('stationFieldWrapper');
-        fieldWrapper.innerHTML = `
-            <label>📍 Current Station</label>
-            <input type="text" value="${userStation.toUpperCase()}" disabled style="background:#f3f4f6; font-weight:bold;">
-            <input type="hidden" id="stationSelect" value="${userStation}">
-        `;
+        if (fieldWrapper) {
+            fieldWrapper.innerHTML = `
+                <label>📍 Current Station</label>
+                <input type="text" value="${userStation.toUpperCase()}" disabled style="background:#f3f4f6; font-weight:bold;">
+                <input type="hidden" id="stationSelect" value="${userStation}">
+            `;
+        }
         
-        // Set default date to today
         const today = new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -290,7 +407,6 @@
         return result.inspections || [];
     }
 
-    // Helper function to check if a record is editable by current user
     function isRecordEditable(record) {
         if (isAdmin) return true;
         const recordAuthor = record['Inspected By'] || '';
@@ -314,7 +430,6 @@
                 return;
             }
             
-            // Filter by date if selected
             if (dateInput) {
                 const [year, month, day] = dateInput.split('-');
                 const targetDate = `${day}/${month}/${year}`;
@@ -331,7 +446,6 @@
                 return;
             }
             
-            // Update editable count
             const editableCount = currentRecords.filter(r => isRecordEditable(r)).length;
             if (!isAdmin) {
                 document.getElementById('permissionMessage').innerHTML = `<span style="color:#059669;">✓</span> You can edit <strong>${editableCount}</strong> of ${currentRecords.length} record(s) (your own records)`;
@@ -351,7 +465,6 @@
         const headerRow = document.getElementById('gridHeaderRow');
         const bodyRow = document.getElementById('gridBodyRow');
         
-        // Collect all unique field names from all records
         const fieldSet = new Set();
         records.forEach(record => {
             Object.keys(record).forEach(key => {
@@ -361,7 +474,6 @@
             });
         });
         
-        // Priority fields first
         const priorityFields = ['Date', 'Inspected By', 'Time', 'Weather'];
         const otherFields = Array.from(fieldSet).filter(f => !priorityFields.includes(f)).sort();
         const headers = [...priorityFields.filter(f => fieldSet.has(f)), ...otherFields];
@@ -377,7 +489,6 @@
             const tr = document.createElement('tr');
             tr.className = rowClass;
             
-            // Action cell with Save button
             const tdAction = document.createElement('td');
             tdAction.style.position = 'sticky';
             tdAction.style.left = '0';
@@ -399,7 +510,6 @@
             tdAction.appendChild(saveBtn);
             tr.appendChild(tdAction);
             
-            // Data cells
             headers.forEach(field => {
                 const td = document.createElement('td');
                 const val = record[field] !== undefined && record[field] !== null ? record[field] : '';
@@ -425,21 +535,37 @@
     window.updateRecord = async function(rowIndex) {
         if (!currentRecords[rowIndex]) return;
         
+        const oldRecord = { ...currentRecords[rowIndex] };
         const record = { ...currentRecords[rowIndex] };
         const inputs = document.querySelectorAll(`.grid-cell-input[data-row="${rowIndex}"]`);
         
+        const changedFields = [];
+        const oldValues = {};
+        const newValues = {};
+        
         inputs.forEach(input => {
             const field = input.getAttribute('data-field');
-            record[field] = input.value;
+            const newValue = input.value;
+            const oldValue = oldRecord[field] !== undefined ? oldRecord[field] : '';
+            
+            if (String(oldValue) !== String(newValue)) {
+                changedFields.push(field);
+                oldValues[field] = oldValue;
+                newValues[field] = newValue;
+            }
+            record[field] = newValue;
         });
         
-        // Double-check permission before saving
+        if (changedFields.length === 0) {
+            showStatus('No changes detected', 'info');
+            return;
+        }
+        
         if (!isRecordEditable(record)) {
             showStatus(`❌ Access Denied: You cannot edit this record. Only ${record['Inspected By']} can edit it.`, 'error');
             return;
         }
         
-        // Find the save button to show saving state
         const row = inputs[0]?.closest('tr');
         const saveBtn = row?.querySelector('button');
         if (saveBtn) {
@@ -456,8 +582,8 @@
             const result = await response.json();
             if (result.success) {
                 currentRecords[rowIndex] = record;
-                showStatus('✅ Record saved successfully!', 'success');
-                // Refresh the grid to show updated values
+                addChangeLog(record, changedFields, oldValues, newValues);
+                showStatus(`✅ Record saved! Changed: ${changedFields.join(', ')}`, 'success');
                 buildGrid(currentRecords);
             } else {
                 throw new Error(result.error);
@@ -465,60 +591,151 @@
         } catch (err) {
             showStatus(`❌ Save failed: ${err.message}`, 'error');
         } finally {
-            if (saveBtn && !saveBtn.disabled === false) {
+            if (saveBtn) {
                 saveBtn.disabled = false;
                 saveBtn.textContent = '💾 Save';
             }
         }
     };
 
-    async function handleDownloadExcel() {
-    if (currentRecords.length === 0) {
-        showStatus('No records to export. Click "Show Records" first.', 'warning');
-        return;
-    }
-    
-    const downloadBtn = document.getElementById('downloadDataBtn');
-    downloadBtn.disabled = true;
-    downloadBtn.innerHTML = '<span class="loading-spinner"></span> Generating...';
-    
-    try {
-        const headers = currentHeaders;
-        const worksheetData = [headers];
-        
-        for (const record of currentRecords) {
-            const row = headers.map(h => record[h] !== undefined ? record[h] : '');
-            worksheetData.push(row);
+    async function handleDownloadExcel(recordsToExport, filenameSuffix = '') {
+        if (!recordsToExport || recordsToExport.length === 0) {
+            showStatus('No records to export.', 'warning');
+            return;
         }
         
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-        worksheet['!cols'] = headers.map(() => ({ wch: 18 }));
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Records');
+        const downloadBtn = document.getElementById('downloadDataBtn');
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<span class="loading-spinner"></span> Generating...';
         
-        const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
-        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        
-        // 👇 NEW FILENAME FORMAT 👇
-        const selectedDate = document.getElementById('dateSelect').value;
-        a.download = `${userStation.toLowerCase()}_${selectedDate}_inspection_data.xlsx`;
-        
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        showStatus(`✅ Exported ${currentRecords.length} record(s)`, 'success');
-    } catch (err) {
-        showStatus(`Export failed: ${err.message}`, 'error');
-    } finally {
-        downloadBtn.disabled = false;
-        downloadBtn.innerHTML = '📥 Download Excel';
+        try {
+            const fieldSet = new Set();
+            recordsToExport.forEach(record => {
+                Object.keys(record).forEach(key => {
+                    if (!key.startsWith('_') && key !== 'timestamp' && key !== 'Timestamp') {
+                        fieldSet.add(key);
+                    }
+                });
+            });
+            const headers = Array.from(fieldSet);
+            
+            const worksheetData = [headers];
+            for (const record of recordsToExport) {
+                const row = headers.map(h => record[h] !== undefined ? record[h] : '');
+                worksheetData.push(row);
+            }
+            
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            worksheet['!cols'] = headers.map(() => ({ wch: 18 }));
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Records');
+            
+            const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            const selectedDate = document.getElementById('dateSelect').value;
+            const datePart = selectedDate || new Date().toISOString().slice(0, 10);
+            a.download = `${userStation.toLowerCase()}_${datePart}_inspection_data.xlsx`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus(`✅ Exported ${recordsToExport.length} record(s)`, 'success');
+        } catch (err) {
+            showStatus(`Export failed: ${err.message}`, 'error');
+        } finally {
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = '📥 Download Inspection Data';
+        }
     }
-}
+
+    async function handleExportRange() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (!startDate || !endDate) {
+            showStatus('Please select both start date and end date', 'warning');
+            return;
+        }
+        
+        const exportBtn = document.getElementById('exportRangeBtn');
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<span class="loading-spinner"></span> Exporting...';
+        
+        try {
+            const allRecords = await fetchAllRecords(userStation);
+            
+            // Convert DD/MM/YYYY to Date object for comparison
+            function parseDate(dateStr) {
+                if (dateStr.includes('/')) {
+                    const [day, month, year] = dateStr.split('/');
+                    return new Date(`${year}-${month}-${day}`);
+                }
+                return new Date(dateStr);
+            }
+            
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            
+            const filteredRecords = allRecords.filter(record => {
+                const recordDateStr = record.Date || record["Inspection Date"];
+                if (!recordDateStr) return false;
+                const recordDate = parseDate(recordDateStr);
+                return recordDate >= start && recordDate <= end;
+            });
+            
+            if (filteredRecords.length === 0) {
+                showStatus(`No records found between ${startDate} and ${endDate}`, 'warning');
+                return;
+            }
+            
+            // Export with range filename
+            const fieldSet = new Set();
+            filteredRecords.forEach(record => {
+                Object.keys(record).forEach(key => {
+                    if (!key.startsWith('_') && key !== 'timestamp' && key !== 'Timestamp') {
+                        fieldSet.add(key);
+                    }
+                });
+            });
+            const headers = Array.from(fieldSet);
+            
+            const worksheetData = [headers];
+            for (const record of filteredRecords) {
+                const row = headers.map(h => record[h] !== undefined ? record[h] : '');
+                worksheetData.push(row);
+            }
+            
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            worksheet['!cols'] = headers.map(() => ({ wch: 18 }));
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Records');
+            
+            const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${userStation.toLowerCase()}_${startDate}_to_${endDate}_inspection_data.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showStatus(`✅ Exported ${filteredRecords.length} record(s) from ${startDate} to ${endDate}`, 'success');
+        } catch (err) {
+            showStatus(`Export failed: ${err.message}`, 'error');
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = '📊 Export Date Range';
+        }
+    }
 
     async function downloadTemplate() {
         const btn = document.getElementById('downloadTemplateBtn');
@@ -545,7 +762,8 @@
     }
 
     document.getElementById('showRecordsBtn').addEventListener('click', handleShowRecords);
-    document.getElementById('downloadDataBtn').addEventListener('click', handleDownloadExcel);
+    document.getElementById('downloadDataBtn').addEventListener('click', () => handleDownloadExcel(currentRecords));
+    document.getElementById('exportRangeBtn').addEventListener('click', handleExportRange);
     document.getElementById('downloadTemplateBtn').addEventListener('click', downloadTemplate);
     document.getElementById('loginStation').addEventListener('change', populatePostDropdown);
 </script>
