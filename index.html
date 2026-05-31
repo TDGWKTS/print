@@ -17,13 +17,15 @@
         select:focus, input:focus { outline: none; border-color: #4f46e5; }
         select:disabled { background: #f3f4f6; }
         button { padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; opacity: 0.6; }
         .btn-primary { background: #059669; color: white; }
-        .btn-primary:hover { background: #047857; }
+        .btn-primary:hover:not(:disabled) { background: #047857; }
         .btn-secondary { background: #4f46e5; color: white; }
-        .btn-secondary:hover { background: #4338ca; }
+        .btn-secondary:hover:not(:disabled) { background: #4338ca; }
         .btn-info { background: #2563eb; color: white; }
-        .btn-info:hover { background: #1d4ed8; }
+        .btn-info:hover:not(:disabled) { background: #1d4ed8; }
+        .btn-warning { background: #d97706; color: white; }
+        .btn-warning:hover:not(:disabled) { background: #b45309; }
         .button-group { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
         .button-group button { flex: 1; min-width: 160px; }
         .status { margin-top: 20px; padding: 14px 18px; border-radius: 10px; font-size: 14px; display: none; }
@@ -35,14 +37,24 @@
         .rectify-scroll { overflow-x: auto; max-height: 500px; margin-top: 15px; border: 1px solid #e5e7eb; border-radius: 8px; }
         .rectify-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .rectify-table th, .rectify-table td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; text-align: left; }
-        .rectify-table th { background: #f9fafb; font-weight: 600; color: #4b5563; position: sticky; top: 0; }
+        .rectify-table th { background: #f9fafb; font-weight: 600; color: #4b5563; position: sticky; top: 0; z-index: 10; }
+        .rectify-table tr.readonly-row { background: #fef2f2; opacity: 0.85; }
+        .rectify-table tr.readonly-row:hover { background: #fee2e2; }
+        .rectify-table tr.editable-row { background: #ffffff; }
+        .rectify-table tr.editable-row:hover { background: #f0fdf4; }
         .grid-cell-input { padding: 6px 8px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 140px; }
+        .grid-cell-input:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+        .readonly-badge { display: inline-block; background: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
+        .editable-badge { display: inline-block; background: #059669; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
         .hidden { display: none !important; }
         .login-card { max-width: 460px; margin: 80px auto; background: white; padding: 40px; border-radius: 16px; }
         .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .note { background: #fef3c7; border-left: 4px solid #d97706; padding: 14px; font-size: 13px; color: #92400e; margin-top: 25px; border-radius: 6px; }
-        .record-count { background: #e0e7ff; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; display: inline-block; margin-bottom: 15px; }
+        .role-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: 10px; }
+        .role-officer { background: #dbeafe; color: #1e40af; }
+        .role-admin { background: #fef3c7; color: #92400e; }
+        .permission-info { background: #f1f5f9; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
     </style>
 </head>
 <body>
@@ -85,16 +97,23 @@
 
 <div id="mainWorkspace" class="container hidden">
     <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 10px;">
             <h1>📋 Inspection Records Portal</h1>
             <button id="logoutBtn" style="padding: 8px 16px; font-size:13px; background:#ef4444; color:white; border-radius:8px;">Logout</button>
         </div>
-        <div class="subtitle">Active: <span id="userDisplay" style="font-weight:bold; color:#4f46e5;"></span></div>
         
-        <div class="form-group" id="stationFieldWrapper"></div>
+        <div class="permission-info">
+            <div>
+                <strong>👤 Active User:</strong> <span id="userDisplay" style="font-weight:bold; color:#4f46e5;"></span>
+                <span id="roleBadge" class="role-badge"></span>
+            </div>
+            <div id="permissionMessage">
+                <span style="color:#059669;">✓</span> You can edit <strong id="editableCount">0</strong> record(s)
+            </div>
+        </div>
         
         <div class="form-group">
-            <label>📅 Filter by Date (optional)</label>
+            <label>📅 Filter by Date (optional - leave empty to see all records)</label>
             <input type="date" id="dateSelect">
         </div>
         
@@ -108,7 +127,11 @@
         
         <div id="correctionSection" class="rectify-container">
             <h3>✏️ Edit Inspection Records</h3>
-            <div style="font-size:13px; color:#4b5563; margin-bottom:10px;">Click <strong>Save</strong> after editing any field. Officers can only edit their own records.</div>
+            <div style="font-size:13px; color:#4b5563; margin-bottom:10px;">
+                💡 <strong>Instructions:</strong> Edit the fields and click <strong>Save</strong> to update.
+                <span style="background:#fef2f2; padding:2px 8px; border-radius:4px; margin-left:10px;">🔴 Red rows = Read-only (not your record)</span>
+                <span style="background:#f0fdf4; padding:2px 8px; border-radius:4px; margin-left:5px;">🟢 Green rows = Editable (your record)</span>
+            </div>
             <div class="rectify-scroll">
                 <table class="rectify-table">
                     <thead><tr id="gridHeaderRow"></tr></thead>
@@ -118,7 +141,9 @@
         </div>
 
         <div class="note">
-            💡 <strong>Note:</strong> Station Admins (SI(TD)-xx) can edit all records. Officers (I(TD)-xx) can only edit records they created.
+            💡 <strong>Permission Rules:</strong><br>
+            • <strong>Officers (I(TD)-xx):</strong> Can ONLY edit records where "Inspected By" matches their Post ID.<br>
+            • <strong>Station Admins (SI(TD)-xx):</strong> Can edit ALL records for their station.
         </div>
     </div>
 </div>
@@ -142,6 +167,7 @@
     let userPost = localStorage.getItem('userPost');
     let currentRecords = [];
     let currentHeaders = [];
+    let isAdmin = false;
 
     if (sessionToken && userStation && userPost) showWorkspace();
 
@@ -214,7 +240,20 @@
     function showWorkspace() {
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('mainWorkspace').classList.remove('hidden');
-        document.getElementById('userDisplay').textContent = `${userPost} @ ${userStation}`;
+        
+        // Check if user is admin (post starts with SI(TD))
+        isAdmin = userPost.startsWith('SI(TD)');
+        
+        document.getElementById('userDisplay').innerHTML = `${userPost} @ ${userStation}`;
+        const roleBadge = document.getElementById('roleBadge');
+        if (isAdmin) {
+            roleBadge.textContent = 'Station Admin (Full Access)';
+            roleBadge.className = 'role-badge role-admin';
+            document.getElementById('permissionMessage').innerHTML = '<span style="color:#d97706;">👑</span> You can edit <strong>ALL</strong> records (Admin privileges)';
+        } else {
+            roleBadge.textContent = 'Officer (Own Records Only)';
+            roleBadge.className = 'role-badge role-officer';
+        }
         
         const fieldWrapper = document.getElementById('stationFieldWrapper');
         fieldWrapper.innerHTML = `
@@ -251,6 +290,13 @@
         return result.inspections || [];
     }
 
+    // Helper function to check if a record is editable by current user
+    function isRecordEditable(record) {
+        if (isAdmin) return true;
+        const recordAuthor = record['Inspected By'] || '';
+        return recordAuthor === userPost;
+    }
+
     async function handleShowRecords() {
         const stationId = userStation;
         const dateInput = document.getElementById('dateSelect').value;
@@ -285,6 +331,12 @@
                 return;
             }
             
+            // Update editable count
+            const editableCount = currentRecords.filter(r => isRecordEditable(r)).length;
+            if (!isAdmin) {
+                document.getElementById('permissionMessage').innerHTML = `<span style="color:#059669;">✓</span> You can edit <strong>${editableCount}</strong> of ${currentRecords.length} record(s) (your own records)`;
+            }
+            
             buildGrid(currentRecords);
             
         } catch (err) {
@@ -309,32 +361,45 @@
             });
         });
         
-        // Priority fields first, then alphabetically
+        // Priority fields first
         const priorityFields = ['Date', 'Inspected By', 'Time', 'Weather'];
         const otherFields = Array.from(fieldSet).filter(f => !priorityFields.includes(f)).sort();
         const headers = [...priorityFields.filter(f => fieldSet.has(f)), ...otherFields];
         currentHeaders = headers;
         
-        headerRow.innerHTML = '<th style="position:sticky; left:0; background:#f9fafb;">Save</th>';
+        headerRow.innerHTML = '<th style="position:sticky; left:0; background:#f9fafb; z-index:20;">Action</th>';
         headers.forEach(h => headerRow.innerHTML += `<th>${h}</th>`);
         bodyRow.innerHTML = '';
         
         records.forEach((record, idx) => {
+            const isEditable = isRecordEditable(record);
+            const rowClass = isEditable ? 'editable-row' : 'readonly-row';
             const tr = document.createElement('tr');
-            const saveBtn = document.createElement('button');
-            saveBtn.textContent = '💾 Save';
-            saveBtn.className = 'btn-primary';
-            saveBtn.style.padding = '6px 12px';
-            saveBtn.style.fontSize = '12px';
-            saveBtn.onclick = () => updateRecord(idx);
+            tr.className = rowClass;
             
+            // Action cell with Save button
             const tdAction = document.createElement('td');
             tdAction.style.position = 'sticky';
             tdAction.style.left = '0';
-            tdAction.style.backgroundColor = 'white';
+            tdAction.style.backgroundColor = isEditable ? '#f0fdf4' : '#fef2f2';
+            tdAction.style.zIndex = '5';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = isEditable ? '💾 Save' : '🔒 Locked';
+            saveBtn.className = 'btn-primary';
+            saveBtn.style.padding = '6px 12px';
+            saveBtn.style.fontSize = '12px';
+            saveBtn.style.backgroundColor = isEditable ? '#059669' : '#9ca3af';
+            saveBtn.disabled = !isEditable;
+            if (isEditable) {
+                saveBtn.onclick = () => updateRecord(idx);
+            } else {
+                saveBtn.title = `You can only edit records where "Inspected By" equals "${userPost}"`;
+            }
             tdAction.appendChild(saveBtn);
             tr.appendChild(tdAction);
             
+            // Data cells
             headers.forEach(field => {
                 const td = document.createElement('td');
                 const val = record[field] !== undefined && record[field] !== null ? record[field] : '';
@@ -342,6 +407,10 @@
                 input.type = 'text';
                 input.className = 'grid-cell-input';
                 input.value = val;
+                input.disabled = !isEditable;
+                if (!isEditable) {
+                    input.title = `Read-only: This record belongs to "${record['Inspected By'] || 'unknown'}"`;
+                }
                 input.setAttribute('data-row', idx);
                 input.setAttribute('data-field', field);
                 td.appendChild(input);
@@ -364,20 +433,18 @@
             record[field] = input.value;
         });
         
-        // Check permission: Officers can only edit their own records
-        if (userPost.startsWith('I(TD)')) {
-            const recordAuthor = record['Inspected By'] || '';
-            if (recordAuthor !== userPost) {
-                showStatus(`❌ Access Denied: You can only edit records you created. This record belongs to "${recordAuthor}"`, 'error');
-                return;
-            }
+        // Double-check permission before saving
+        if (!isRecordEditable(record)) {
+            showStatus(`❌ Access Denied: You cannot edit this record. Only ${record['Inspected By']} can edit it.`, 'error');
+            return;
         }
         
-        const updateBtn = document.querySelector(`.grid-cell-input[data-row="${rowIndex}"] + button`) || 
-                         document.querySelector(`button[onclick="updateRecord(${rowIndex})"]`);
-        if (updateBtn) {
-            updateBtn.disabled = true;
-            updateBtn.textContent = 'Saving...';
+        // Find the save button to show saving state
+        const row = inputs[0]?.closest('tr');
+        const saveBtn = row?.querySelector('button');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
         }
         
         try {
@@ -390,15 +457,17 @@
             if (result.success) {
                 currentRecords[rowIndex] = record;
                 showStatus('✅ Record saved successfully!', 'success');
+                // Refresh the grid to show updated values
+                buildGrid(currentRecords);
             } else {
                 throw new Error(result.error);
             }
         } catch (err) {
             showStatus(`❌ Save failed: ${err.message}`, 'error');
         } finally {
-            if (updateBtn) {
-                updateBtn.disabled = false;
-                updateBtn.textContent = '💾 Save';
+            if (saveBtn && !saveBtn.disabled === false) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 Save';
             }
         }
     };
