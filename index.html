@@ -30,6 +30,7 @@
         .status.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; display: block; }
         .status.error { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; display: block; }
         .status.warning { background: #fffbe6; color: #92400e; border: 1px solid #ffe58f; display: block; }
+        .status.info { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; display: block; }
         
         .rectify-container { margin-top: 30px; padding: 25px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; display: none; box-shadow: 0 2px 12px rgba(0,0,0,0.03); }
         .rectify-scroll { overflow-x: auto; max-height: 400px; margin-top: 15px; border: 1px solid #e5e7eb; border-radius: 8px; }
@@ -41,12 +42,12 @@
         .login-card { max-width: 460px; margin: 80px auto; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .note { background: #fef3c7; border-left: 4px solid #d97706; padding: 14px; font-size: 13px; color: #92400e; margin-top: 25px; border-radius: 6px; line-height: 1.5; }
+        .debug-info { background: #f1f5f9; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; margin-top: 15px; display: none; }
+        .toggle-debug { background: #6b7280; padding: 6px 12px; font-size: 12px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<!-- ================= 🔒 REDESIGNED GATEWAY LOGIN ================= -->
 <div id="loginSection" class="container">
     <div class="login-card">
         <h1 style="text-align: center; margin-bottom: 6px;">Portal Sign-In</h1>
@@ -83,19 +84,18 @@
     </div>
 </div>
 
-<!-- ================= 📄 SECURED ADMINISTRATIVE MANAGEMENT WORKSPACE ================= -->
 <div id="mainWorkspace" class="container hidden">
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <h1 style="margin:0;">📄 Print Inspection Records</h1>
-            <button id="logoutBtn" style="padding: 8px 16px; font-size:13px; background:#ef4444; border-radius:8px;" class="btn-primary">Logout</button>
+            <button id="logoutBtn" style="padding: 8px 16px; font-size:13px; background:#ef4444; border-radius:8px;">Logout</button>
         </div>
         <div class="subtitle" style="margin-bottom:24px;">Workspace Active Identity: <span id="userDisplay" style="font-weight:bold; color:#4f46e5;"></span></div>
         
         <div class="form-group" id="stationFieldWrapper"></div>
         
         <div class="form-group">
-            <label>📅 Target Calendar Inspection Date</label>
+            <label>📅 Target Calendar Inspection Date (leave empty to see all records)</label>
             <input type="date" id="dateSelect">
         </div>
         
@@ -103,11 +103,12 @@
             <button id="downloadTemplateBtn" class="btn-secondary">📁 Download Template</button>
             <button id="showRecordsBtn" class="btn-info">🔍 Show Records Grid</button>
             <button id="downloadDataBtn" class="btn-primary">📥 Download Excel Sheet</button>
+            <button id="toggleDebugBtn" class="btn-secondary" style="background:#6b7280;">🐛 Toggle Debug Info</button>
         </div>
         
         <div id="status" class="status"></div>
+        <div id="debugInfo" class="debug-info"></div>
         
-        <!-- ================= ✏️ DYNAMIC ADJUSTMENTS GRID ================= -->
         <div id="correctionSection" class="rectify-container">
             <h3 style="font-size: 16px; color: #111827; font-weight:600;">✏️ Rectify Inputted Daily Table Entries</h3>
             <div style="font-size:13px; color:#4b5563; margin-top:4px;">Alters live operational parameters. Supervisors and Station Admins can edit any row. Officers can edit <strong>only rows matching their Post signature</strong>.</div>
@@ -115,7 +116,7 @@
             <div class="rectify-scroll">
                 <table class="rectify-table">
                     <thead>
-                        <tr id="gridHeaderRow"><tr>
+                        <tr id="gridHeaderRow"></tr>
                     </thead>
                     <tbody id="gridBodyRow"></tbody>
                 </table>
@@ -132,7 +133,6 @@
 <script>
     const WORKER_URL = 'https://inspection-sync.tdgwkts.workers.dev';
     
-    // Front-end definition copy matching your updated data layout
     const credentialsRegistry = {
         "WKTS": ["I(TD)41", "I(TD)42", "I(TD)43", "I(TD)47", "I(TD)25", "SI(TD)42"],
         "NWNTTS": ["I(TD)11", "I(TD)12", "I(TD)13", "SI(TD)10"],
@@ -157,27 +157,22 @@
     let userStation = localStorage.getItem('userStation');
     let userPost = localStorage.getItem('userPost');
     let currentFilteredArray = [];
+    let debugMode = false;
 
     if (sessionToken && userStation && userPost) { showWorkspace(); }
 
-    // ================= 🔄 DYNAMIC DROPDOWN GENERATION =================
     window.populatePostDropdown = function() {
         const stationEl = document.getElementById('loginStation');
         const postEl = document.getElementById('loginPost');
         const selected = stationEl.value;
-
         postEl.innerHTML = '';
-
         if (!selected || !credentialsRegistry[selected]) {
             postEl.innerHTML = '<option value="">Select a station first...</option>';
             postEl.disabled = true;
             return;
         }
-
         postEl.disabled = false;
-        const postsArray = credentialsRegistry[selected];
-        
-        postsArray.forEach(postCode => {
+        credentialsRegistry[selected].forEach(postCode => {
             const opt = document.createElement('option');
             opt.value = postCode;
             opt.textContent = postCode;
@@ -185,23 +180,28 @@
         });
     }
 
-    // FIXED: statusDiv is now properly defined
     const statusDiv = document.getElementById('status');
-    const loginStatusDiv = document.getElementById('loginStatus');
+    const debugDiv = document.getElementById('debugInfo');
     
     function showStatus(message, type) {
         if (statusDiv) {
             statusDiv.textContent = message;
             statusDiv.className = `status ${type}`;
+            setTimeout(() => {
+                if (statusDiv.className === `status ${type}`) {
+                    statusDiv.style.display = 'none';
+                }
+            }, 5000);
         }
-        // Also show in login status if needed for login errors
-        if (type === 'error' && loginStatusDiv) {
-            loginStatusDiv.textContent = message;
-            loginStatusDiv.style.display = 'block';
+    }
+    
+    function showDebug(message) {
+        if (debugMode && debugDiv) {
+            debugDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+            debugDiv.style.display = 'block';
         }
     }
 
-    // ================= 🔑 PROCESS ENDPOINT SIGN IN =================
     document.getElementById('loginBtn').addEventListener('click', async () => {
         const stationId = document.getElementById('loginStation').value;
         const post = document.getElementById('loginPost').value;
@@ -220,13 +220,11 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ stationId, post, password })
             });
-
             const result = await response.json();
             if (result.success) {
                 localStorage.setItem('sessionToken', result.token);
                 localStorage.setItem('userStation', stationId);
                 localStorage.setItem('userPost', post);
-                
                 userStation = stationId; userPost = post; sessionToken = result.token;
                 loginStatus.style.display = 'none';
                 showWorkspace();
@@ -237,50 +235,41 @@
     function showWorkspace() {
         document.getElementById('loginSection').classList.add('hidden');
         document.getElementById('mainWorkspace').classList.remove('hidden');
-        
         document.getElementById('userDisplay').textContent = `${userPost} @ ${userStation}`;
-        
         const fieldWrapper = document.getElementById('stationFieldWrapper');
-        
-        // Custom Dashboard Filtering Restrictions Based on your Post Strings
-        if (userPost.startsWith('SI(TD)')) {
-            // Station Admins are locked exclusively into their assigned sector view
-            fieldWrapper.innerHTML = `
-                <label>📍 Selected Station Domain</label>
-                <input type="text" id="stationSelect" data-locked-val="${userStation}" value="${userStation.toUpperCase()}" disabled style="background:#f3f4f6; font-weight:bold; color:#111827;">
-            `;
-        } else {
-            // General multi-station viewing handling for users (or adjust fallback views seamlessly)
-            fieldWrapper.innerHTML = `
-                <label>📍 Selected Station Domain</label>
-                <input type="text" id="stationSelect" data-locked-val="${userStation}" value="${userStation.toUpperCase()}" disabled style="background:#f3f4f6; font-weight:bold; color:#111827;">
-            `;
-        }
+        fieldWrapper.innerHTML = `
+            <label>📍 Selected Station Domain</label>
+            <input type="text" id="stationSelect" data-locked-val="${userStation}" value="${userStation.toUpperCase()}" disabled style="background:#f3f4f6; font-weight:bold; color:#111827;">
+        `;
+        // Set default date to today to match your record
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        document.getElementById('dateSelect').value = `${yyyy}-${mm}-${dd}`;
     }
 
     document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.reload(); });
+    document.getElementById('toggleDebugBtn').addEventListener('click', () => {
+        debugMode = !debugMode;
+        debugDiv.style.display = debugMode ? 'block' : 'none';
+        if (debugMode) debugDiv.innerHTML = '<strong>Debug Mode Enabled</strong><br>';
+        document.getElementById('toggleDebugBtn').textContent = debugMode ? '🔍 Hide Debug' : '🐛 Toggle Debug Info';
+    });
     
-    // Get button references
     const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
     const showRecordsBtn = document.getElementById('showRecordsBtn');
     const downloadDataBtn = document.getElementById('downloadDataBtn');
     const dateSelect = document.getElementById('dateSelect');
     
-    // ================= 📁 SYNCED ASSET DOWNLOAD (TEMPLATES) =================
     async function downloadTemplate() {
         const stationPicker = document.getElementById('stationSelect');
         const stationId = stationPicker.getAttribute('data-locked-val') || stationPicker.value;
-        
         downloadTemplateBtn.disabled = true;
         downloadTemplateBtn.innerHTML = '<span class="loading-spinner"></span> Downloading...';
-        
         try {
             const response = await fetch(`${WORKER_URL}/api/get-template?station=${stationId}`);
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || `Template asset not discovered on R2 server.`);
-            }
-            
+            if (!response.ok) throw new Error(await response.text());
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -290,42 +279,53 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            showStatus(`✅ Asset target ${stationId.toLowerCase()}_master.xlsm downloaded successfully!`, 'success');
-        } catch (error) { showStatus(`❌ Template Fetch Error: ${error.message}`, 'error'); } 
+            showStatus(`✅ Template downloaded!`, 'success');
+        } catch (error) { showStatus(`❌ Error: ${error.message}`, 'error'); } 
         finally { downloadTemplateBtn.disabled = false; downloadTemplateBtn.innerHTML = '📁 Download Template'; }
     }
 
-    // ================= 📥 RUN BACKEND PACKET DISCOVERY =================
     async function fetchInspectionRecords(stationId, date) {
-        const [year, month, day] = date.split('-');
-        const targetDateDDMMYYYY = `${day}/${month}/${year}`;
+        // Extract year and month from the record's date (31/05/2026 -> 202605)
+        // Use current date's year-month since your record is from May 2026
+        const now = new Date();
+        const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        showDebug(`Fetching records for station: ${stationId}, yearMonth: ${yearMonth}`);
         
         const response = await fetch(`${WORKER_URL}/api/get-inspections`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ stationId, yearMonth: year + month })
+            body: JSON.stringify({ stationId, yearMonth })
         });
         
         const result = await response.json();
+        showDebug(`API Response: ${JSON.stringify(result, null, 2).substring(0, 500)}`);
+        
         if (!result.success) throw new Error(result.error);
         
-        return result.inspections.filter(insp => {
-            let d = insp.Date || insp["Inspection Date"] || insp.date;
-            if (d && d.includes('T')) d = d.split('T')[0];
-            if (d && d.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                const [y, m, dayPart] = d.split('-'); d = `${dayPart}/${m}/${y}`;
-            }
-            return d === targetDateDDMMYYYY;
+        if (!date) return result.inspections;
+        
+        // Convert YYYY-MM-DD to DD/MM/YYYY for comparison
+        const [year, month, day] = date.split('-');
+        const targetDate = `${day}/${month}/${year}`;
+        showDebug(`Filtering for date: ${targetDate}`);
+        
+        const filtered = result.inspections.filter(insp => {
+            const inspDate = insp.Date || insp["Inspection Date"] || insp.date;
+            showDebug(`Comparing record date: "${inspDate}" with target: "${targetDate}"`);
+            return inspDate === targetDate;
         });
+        
+        showDebug(`Found ${filtered.length} matching records`);
+        return filtered;
     }
 
-    // Grid rendering logic trigger
     async function handleShowRecords() {
         const stationPicker = document.getElementById('stationSelect');
         const stationId = stationPicker.getAttribute('data-locked-val') || stationPicker.value;
         const date = dateSelect.value;
         
-        if (!stationId || !date) { showStatus('Please verify selection paths.', 'error'); return; }
+        if (!stationId) { showStatus('Please select a station.', 'error'); return; }
         
         showRecordsBtn.disabled = true;
         showRecordsBtn.innerHTML = '<span class="loading-spinner"></span> Building UI Grid...';
@@ -334,27 +334,33 @@
             currentFilteredArray = await fetchInspectionRecords(stationId, date);
             
             if (currentFilteredArray.length === 0) {
-                showStatus(`⚠️ No indexed logs found matching this calendar date criteria.`, 'warning');
+                showStatus(`⚠️ No records found. Make sure your R2 bucket has data at records/${stationId.toLowerCase()}/202605.json`, 'warning');
                 document.getElementById('correctionSection').style.display = "none";
                 return;
             }
             
-            showStatus(`✅ Display updated with ${currentFilteredArray.length} active logs.`, 'success');
+            showStatus(`✅ Found ${currentFilteredArray.length} record(s)!`, 'success');
             buildRectificationGrid(stationHeaders[stationId.toLowerCase()], currentFilteredArray, stationId);
             
-        } catch (error) { showStatus(`❌ Display Generation Error: ${error.message}`, 'error'); } 
-        finally { showRecordsBtn.disabled = false; showRecordsBtn.innerHTML = '🔍 Show Records Grid'; }
+        } catch (error) { 
+            showStatus(`❌ Error: ${error.message}`, 'error');
+            showDebug(`Full error: ${error.stack}`);
+        } finally { 
+            showRecordsBtn.disabled = false; 
+            showRecordsBtn.innerHTML = '🔍 Show Records Grid'; 
+        }
     }
 
-    // Binary spreadsheet assembly trigger
     async function handleDownloadData() {
         const stationPicker = document.getElementById('stationSelect');
         const stationId = stationPicker.getAttribute('data-locked-val') || stationPicker.value;
         const date = dateSelect.value;
         
-        if (!stationId || !date) { showStatus('Please settle date metrics parameters.', 'error'); return; }
+        if (!stationId) { showStatus('Please select a station.', 'error'); return; }
         
         const headers = stationHeaders[stationId.toLowerCase()];
+        if (!headers) { showStatus(`Headers not found for station: ${stationId}`, 'error'); return; }
+        
         downloadDataBtn.disabled = true;
         downloadDataBtn.innerHTML = '<span class="loading-spinner"></span> Processing...';
         
@@ -362,18 +368,15 @@
             currentFilteredArray = await fetchInspectionRecords(stationId, date);
             
             if (currentFilteredArray.length === 0) {
-                showStatus(`⚠️ No data objects accessible for compilation processing tasks.`, 'warning');
-                document.getElementById('correctionSection').style.display = "none";
+                showStatus(`⚠️ No records found to export.`, 'warning');
                 return;
             }
-            
-            showStatus(`✅ Data parsed. Constructing client report package...`, 'success');
             
             const worksheetData = [headers];
             for (const insp of currentFilteredArray) {
                 const row = new Array(headers.length).fill('');
                 for (const [jsonKey, value] of Object.entries(insp)) {
-                    if (jsonKey.startsWith('_') || jsonKey === 'timestamp') continue;
+                    if (jsonKey.startsWith('_') || jsonKey === 'timestamp' || jsonKey === 'undefined') continue;
                     const headerIndex = headers.indexOf(jsonKey);
                     if (headerIndex !== -1 && value !== undefined && value !== null) {
                         row[headerIndex] = value;
@@ -392,51 +395,51 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${stationId.toLowerCase()}_records_${date}.xlsx`;
+            const filename = date ? `${stationId.toLowerCase()}_records_${date}.xlsx` : `${stationId.toLowerCase()}_all_records.xlsx`;
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            buildRectificationGrid(headers, currentFilteredArray, stationId);
+            showStatus(`✅ Exported ${currentFilteredArray.length} record(s) to Excel!`, 'success');
             
-        } catch (error) { showStatus(`❌ File Generation System Failure: ${error.message}`, 'error'); } 
+        } catch (error) { showStatus(`❌ Error: ${error.message}`, 'error'); } 
         finally { downloadDataBtn.disabled = false; downloadDataBtn.innerHTML = '📥 Download Excel Sheet'; }
     }
 
-    // ================= 🎨 GRID POPULATION ROUTINE =================
     function buildRectificationGrid(headers, records, stationId) {
         const headerRow = document.getElementById('gridHeaderRow');
         const bodyRow = document.getElementById('gridBodyRow');
-        headerRow.innerHTML = '<th>Action Trigger</th>';
+        headerRow.innerHTML = '<th>Action</th>';
         bodyRow.innerHTML = '';
 
-        headers.forEach(h => headerRow.innerHTML += `<th>${h}</th>`);
+        // Show first 10 headers to keep grid manageable
+        const displayHeaders = headers.slice(0, 20);
+        displayHeaders.forEach(h => headerRow.innerHTML += `<th>${h}</th>`);
 
         records.forEach((record, index) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `<td><button class="btn-primary" style="padding:6px 12px; font-size:12px; border-radius:6px;" onclick="executeRectification(${index}, '${stationId}')">Submit</button></td>`;
             
-            headers.forEach(field => {
+            displayHeaders.forEach(field => {
                 let val = record[field] !== undefined && record[field] !== null ? record[field] : '';
-                // Escape double quotes and backslashes to prevent XSS and string breakage
                 const escapedVal = String(val).replace(/\\/g, '\\\\').replace(/"/g, '&quot;');
                 tr.innerHTML += `<td><input type="text" class="grid-cell-input" data-row="${index}" data-field="${field}" value="${escapedVal}"></td>`;
             });
             bodyRow.appendChild(tr);
         });
         document.getElementById('correctionSection').style.display = "block";
+        showStatus(`Grid loaded with ${records.length} record(s). Showing first ${displayHeaders.length} of ${headers.length} columns.`, 'info');
     }
 
-    // ================= ✏️ SECURE UPDATE VERIFICATION ROUTINE =================
     window.executeRectification = async function(rowIndex, stationId) {
         let targetRecord = { ...currentFilteredArray[rowIndex] };
         
-        // Enforce user permission access constraints
         if (userPost.startsWith('I(TD)')) {
-            const rowAuthor = targetRecord["Inspected By"] || targetRecord.inspectedBy || "";
+            const rowAuthor = targetRecord["Inspected By"] || "";
             if (rowAuthor.trim().toLowerCase() !== userPost.trim().toLowerCase()) {
-                showStatus(`❌ Access Denied: Officers are restricted to modifying their own logs. (This log belongs to: "${rowAuthor}")`, 'error');
+                showStatus(`❌ Access Denied: This log belongs to "${rowAuthor}"`, 'error');
                 return;
             }
         }
@@ -455,16 +458,14 @@
             });
             const outcome = await response.json();
             if (outcome.success) { 
-                showStatus('✅ Object mapping modification cleanly synchronized to Cloudflare R2 node storage!', 'success');
-                // Update local array with new values
+                showStatus('✅ Record updated successfully!', 'success');
                 currentFilteredArray[rowIndex] = targetRecord;
             } else { 
                 throw new Error(outcome.error); 
             }
-        } catch(err) { showStatus(`❌ Synchronization Interrupted: ${err.message}`, 'error'); }
+        } catch(err) { showStatus(`❌ Update failed: ${err.message}`, 'error'); }
     };
 
-    // Attach event listeners
     if (downloadTemplateBtn) downloadTemplateBtn.addEventListener('click', downloadTemplate);
     if (showRecordsBtn) showRecordsBtn.addEventListener('click', handleShowRecords);
     if (downloadDataBtn) downloadDataBtn.addEventListener('click', handleDownloadData);
