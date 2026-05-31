@@ -3,29 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transfer Station Inspection Dashboard</title>
+    <title>Transfer Station Inspection System</title>
     <style>
+        :root {
+            --primary-color: #3182ce;
+            --primary-hover: #2b6cb0;
+            --success-color: #38a169;
+            --success-hover: #2f855a;
+            --secondary-color: #4a5568;
+            --secondary-hover: #2d3748;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e2e8f0;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f5f7fa;
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
             padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
+
         .container {
+            width: 100%;
             max-width: 1000px;
-            margin: 0 auto;
-            background: #ffffff;
+            background: var(--card-bg);
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-sizing: border-box;
         }
-        h1 {
+
+        h1, h2 {
             color: #1a365d;
             margin-top: 0;
-            border-bottom: 2px solid #e2e8f0;
+            border-bottom: 2px solid var(--border-color);
             padding-bottom: 10px;
         }
+
+        /* View Switching Logic */
+        .view-panel {
+            display: none;
+        }
+        .view-panel.active {
+            display: block;
+        }
+
+        /* 🔒 Login Form Styling */
+        .login-card {
+            max-width: 400px;
+            margin: 60px auto;
+            padding: 30px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .form-group select, 
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 1em;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+
+        /* 📊 Dashboard Layout Styling */
         .user-info {
             background-color: #ebf8ff;
             border-left: 4px solid #3182ce;
@@ -33,7 +97,11 @@
             margin-bottom: 25px;
             border-radius: 0 4px 4px 0;
             font-size: 0.95em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
+
         .control-panel {
             display: flex;
             gap: 15px;
@@ -45,19 +113,22 @@
             border-radius: 6px;
             border: 1px solid #edf2f7;
         }
-        label {
+
+        .control-panel label {
             font-weight: 600;
             color: #4a5568;
         }
-        select, input[type="month"] {
+
+        .control-panel input[type="month"] {
             padding: 8px 12px;
             border: 1px solid #cbd5e0;
             border-radius: 4px;
             font-size: 1em;
-            background-color: #fff;
         }
+
+        /* Global UI Buttons Layout */
         button {
-            padding: 9px 16px;
+            padding: 10px 18px;
             border: none;
             border-radius: 4px;
             font-size: 1em;
@@ -65,116 +136,193 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        .btn-primary { background-color: #3182ce; color: white; }
-        .btn-primary:hover { background-color: #2b6cb0; }
-        .btn-success { background-color: #38a169; color: white; }
-        .btn-success:hover { background-color: #2f855a; }
-        .btn-secondary { background-color: #4a5568; color: white; }
-        .btn-secondary:hover { background-color: #2d3748; }
+
+        .btn-block { width: 100%; margin-top: 10px; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-success { background-color: var(--success-color); color: white; }
+        .btn-success:hover { background-color: var(--success-hover); }
+        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn-secondary:hover { background-color: var(--secondary-hover); }
+        .btn-danger { background-color: #e53e3e; color: white; padding: 6px 12px; font-size: 0.85em; }
+        .btn-danger:hover { background-color: #c53030; }
         
-        /* Fixed Status Messenger Area Styling */
+        /* Message Engine Container Alert Box */
         #statusDiv {
             margin: 15px 0;
-            padding: 10px;
+            padding: 12px;
             border-radius: 4px;
             font-weight: 500;
-            display: none; /* Controlled dynamically by JS */
+            display: none;
         }
         
+        /* Interactive Data Display Output Grid */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
             font-size: 0.9em;
+            background: #fff;
         }
+
         .data-table th, .data-table td {
-            border: 1px solid #e2e8f0;
-            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            padding: 12px 14px;
             text-align: left;
+            white-space: nowrap;
         }
+
         .data-table th {
             background-color: #edf2f7;
             color: #2d3748;
             font-weight: 600;
+            position: sticky;
+            top: 0;
         }
+
+        .data-table tr:last-child td { border-bottom: none; }
         .data-table tr:nth-child(even) { background-color: #f7fafc; }
+        
         .no-data {
             text-align: center;
-            padding: 30px;
+            padding: 40px;
             color: #718096;
             font-style: italic;
+            background: #fff;
+            border: 1px dashed var(--border-color);
+            border-radius: 6px;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Inspection Management System</h1>
-    
-    <div class="user-info">
-        Logged in Session — Station: <strong id="lblStation">-</strong> | Post: <strong id="lblPost">-</strong>
-    </div>
+<div id="loginView" class="view-panel active">
+    <div class="login-card">
+        <h2>System Sign In</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="ddlStation">Transfer Station</label>
+                <select id="ddlStation" required>
+                    <option value="" disabled selected>-- Select Station --</option>
+                    <option value="WKTS">WKTS (West Kowloon)</option>
+                    <option value="NWNTTS">NWNTTS (North West New Territories)</option>
+                    <option value="IETS">IETS (Island East)</option>
+                    <option value="IWTS">IWTS (Island West)</option>
+                    <option value="STTS">STTS (Shatin)</option>
+                    <option value="OITF">OITF (Outlying Islands)</option>
+                    <option value="NLTS">NLTS (North Lantau)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="txtPost">User Post ID</label>
+                <input type="text" id="txtPost" placeholder="e.g. I(TD)25" required autocomplete="username">
+            </div>
 
-    <div class="control-panel">
-        <div>
-            <label for="txtTargetMonth">Select Month: </label>
-            <input type="month" id="txtTargetMonth">
+            <div class="form-group">
+                <label for="txtPassword">Password</label>
+                <input type="password" id="txtPassword" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn-primary btn-block">Log In</button>
+        </form>
+    </div>
+</div>
+
+<div id="dashboardView" class="view-panel">
+    <div class="container">
+        <h1>Inspection Management Dashboard</h1>
+        
+        <div class="user-info">
+            <div>
+                Logged in Station: <strong id="lblStation">-</strong> | Post: <strong id="lblPost">-</strong>
+            </div>
+            <button class="btn-danger" id="btnLogout">Sign Out</button>
         </div>
 
-        <button class="btn-secondary" id="btnDownloadTemplate">📥 Download Template</button>
-        <button class="btn-primary" id="btnShowRecords">🔍 Show Records</button>
-        <button class="btn-success" id="btnDownloadData">📊 Download Data (JSON)</button>
-    </div>
+        <div class="control-panel">
+            <div>
+                <label for="txtTargetMonth">Select Month: </label>
+                <input type="month" id="txtTargetMonth">
+            </div>
 
-    <div id="statusDiv"></div>
+            <button class="btn-secondary" id="btnDownloadTemplate">📥 Download Template</button>
+            <button class="btn-primary" id="btnShowRecords">🔍 Show Records</button>
+            <button class="btn-success" id="btnDownloadData">📊 Download Data (JSON)</button>
+        </div>
 
-    <div id="tableWrapper">
-        <table class="data-table" id="recordsTable" style="display: none;">
-            <thead>
-                <tr id="tableHeaders"></tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-        <div id="emptyMessage" class="no-data">Select a target month and click "Show Records" to display data.</div>
+        <div id="statusDiv"></div>
+
+        <div id="tableWrapper">
+            <div class="table-container" id="tableContainer" style="display: none;">
+                <table class="data-table" id="recordsTable">
+                    <thead>
+                        <tr id="tableHeaders"></tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+            <div id="emptyMessage" class="no-data">Select a target month and click "Show Records" to display data.</div>
+        </div>
     </div>
 </div>
 
 <script>
-    // ==========================================
-    // ⚙️ SYSTEM CONFIGURATION
-    // ==========================================
+    // Points directly to your online Cloudflare Worker URL
     const API_BASE = "https://inspection-sync.tdgwkts.workers.dev/api";
 
-    // Mock retrieval of session states (Fallback settings map to your credentials context)
-    const sessionContext = {
-        stationId: localStorage.getItem("stationId") || "IETS", 
-        post: localStorage.getItem("post") || "I(TD)25",
+    // Application State Manager Memory
+    let sessionContext = {
+        stationId: localStorage.getItem("stationId") || "", 
+        post: localStorage.getItem("post") || "",
         token: localStorage.getItem("sessionToken") || ""
     };
 
-    // Initialize UI Text Fields
-    document.getElementById("lblStation").innerText = sessionContext.stationId.toUpperCase();
-    document.getElementById("lblPost").innerText = sessionContext.post;
-    
-    // Default the month selector tool input element to current date automatically
-    const today = new Date();
-    const currentYearMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-    document.getElementById("txtTargetMonth").value = currentYearMonth;
+    // Initialize View Layout on Page Load Configuration Check
+    document.addEventListener("DOMContentLoaded", () => {
+        if (sessionContext.token) {
+            showDashboardView();
+        } else {
+            showLoginView();
+        }
+        
+        // Auto default calendar input to current year and month element
+        const today = new Date();
+        document.getElementById("txtTargetMonth").value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    });
 
     // ==========================================
-    // 🛡️ REVISED STATUS DIV LOGGER ENGINE (FIXED)
+    // 🔀 APPLICATION ROUTING FUNCTIONS
+    // ==========================================
+    function showLoginView() {
+        document.getElementById("dashboardView").classList.remove("active");
+        document.getElementById("loginView").classList.add("active");
+        hideStatus();
+    }
+
+    function showDashboardView() {
+        document.getElementById("lblStation").innerText = sessionContext.stationId.toUpperCase();
+        document.getElementById("lblPost").innerText = sessionContext.post;
+        
+        document.getElementById("loginView").classList.remove("active");
+        document.getElementById("dashboardView").classList.add("active");
+        hideStatus();
+    }
+
+    // ==========================================
+    // 🛡️ STATUS DIV MESSENGER LOGIC (STABLE & SECURE)
     // ==========================================
     function showStatus(message, isError = false) {
         const statusElement = document.getElementById("statusDiv");
-        if (!statusElement) {
-            console.log((isError ? "ERROR: " : "STATUS: ") + message);
-            return;
-        }
-
-        if (!message) {
-            statusElement.style.display = "none";
-            return;
-        }
+        if (!statusElement) return;
 
         statusElement.style.display = "block";
         statusElement.innerText = message;
@@ -190,34 +338,87 @@
         }
     }
 
-    // Helper to format HTML month elements ("2026-05") into Worker parameters ("202605")
+    function hideStatus() {
+        const statusElement = document.getElementById("statusDiv");
+        if (statusElement) statusElement.style.display = "none";
+    }
+
     function getCleanYearMonth() {
-        const rawVal = document.getElementById("txtTargetMonth").value; // e.g. "2026-05"
-        if (!rawVal) return "";
-        return rawVal.replace("-", "");
+        const rawVal = document.getElementById("txtTargetMonth").value; 
+        return rawVal ? rawVal.replace("-", "") : ""; // Out: "202605"
     }
 
     // ==========================================
-    // 📁 ACTION: DOWNLOAD TEMPLATE
+    // 🔑 EVENT: SIGN IN HANDLER SUBMISSION PIPELINE
     // ==========================================
-    document.getElementById("btnDownloadTemplate").addEventListener("click", function() {
-        showStatus("Initializing template download stream...");
-        const targetUrl = `${API_BASE}/get-template?station=${sessionContext.stationId.toLowerCase()}`;
-        window.open(targetUrl, "_blank");
-        showStatus(""); // Clear text status cleanly
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const stationId = document.getElementById("ddlStation").value;
+        const post = document.getElementById("txtPost").value.trim();
+        const password = document.getElementById("txtPassword").value;
+
+        showStatus("Authenticating credentials against storage keys registry...");
+
+        try {
+            const response = await fetch(`${API_BASE}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ stationId, post, password })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || "Authentication verification rejected.");
+            }
+
+            // Save Session State Metrics directly to LocalStorage
+            localStorage.setItem("stationId", stationId);
+            localStorage.setItem("post", post);
+            localStorage.setItem("sessionToken", result.token);
+
+            sessionContext = { stationId, post, token: result.token };
+            
+            // Clear passwords text element fields gracefully
+            document.getElementById("txtPassword").value = "";
+            showDashboardView();
+
+        } catch (err) {
+            showStatus(`Login Failed: ${err.message}`, true);
+        }
     });
 
     // ==========================================
-    // 🔍 ACTION: SHOW RECORDS
+    // 🚪 EVENT: LOGOUT HANDLER
     // ==========================================
-    document.getElementById("btnShowRecords").addEventListener("click", async function handleShowRecords() {
+    document.getElementById("btnLogout").addEventListener("click", () => {
+        localStorage.clear();
+        sessionContext = { stationId: "", post: "", token: "" };
+        showLoginView();
+    });
+
+    // ==========================================
+    // 📁 EVENT: DOWNLOAD EXCEL MACRO MASTER TEMPLATE
+    // ==========================================
+    document.getElementById("btnDownloadTemplate").addEventListener("click", () => {
+        showStatus("Opening secure stream to master template file location...");
+        const targetUrl = `${API_BASE}/get-template?station=${sessionContext.stationId.toLowerCase()}`;
+        window.open(targetUrl, "_blank");
+        setTimeout(hideStatus, 2000);
+    });
+
+    // ==========================================
+    // 🔍 EVENT: SHOW LOGS GRID VIEW
+    // ==========================================
+    document.getElementById("btnShowRecords").addEventListener("click", async () => {
         const yearMonth = getCleanYearMonth();
         if (!yearMonth) {
-            showStatus("Please select a target year and month filter input constraint.", true);
+            showStatus("Please pick a valid calendar month target parameters block.", true);
             return;
         }
 
-        showStatus("Fetching inspection logs from storage repository engine...");
+        showStatus("Querying monthly database collection registry files...");
         
         try {
             const response = await fetch(`${API_BASE}/get-inspections`, {
@@ -229,31 +430,31 @@
                 })
             });
 
-            if (!response.ok) throw new Error(`Server returned HTTP code status error context: ${response.status}`);
+            if (!response.ok) throw new Error(`Server execution fault index: ${response.status}`);
             
             const result = await response.json();
-            if (!result.success) throw new Error(result.error || "Failed loading items array registry records.");
+            if (!result.success) throw new Error(result.error || "Failed loading data logs repository.");
 
             renderTableData(result.inspections);
-            showStatus(""); // Dismiss loader window cleanly
+            hideStatus();
 
         } catch (err) {
-            showStatus(`Error pulling records: ${err.message}`, true);
+            showStatus(`Data View Failure: ${err.message}`, true);
             console.error(err);
         }
     });
 
     // ==========================================
-    // 📊 ACTION: DOWNLOAD JSON DATA
+    // 📊 EVENT: BACKUP DOWNLOAD RAW JSON EXPORT
     // ==========================================
-    document.getElementById("btnDownloadData").addEventListener("click", async function handleDownloadData() {
+    document.getElementById("btnDownloadData").addEventListener("click", async () => {
         const yearMonth = getCleanYearMonth();
         if (!yearMonth) {
-            showStatus("Please choose a date before running download exports calculations processing pipelines.", true);
+            showStatus("Please verify a targeted date context parameter input.", true);
             return;
         }
 
-        showStatus("Preparing data package for local export download...");
+        showStatus("Compiling background ledger database records into download block...");
 
         try {
             const response = await fetch(`${API_BASE}/get-inspections`, {
@@ -265,15 +466,14 @@
                 })
             });
 
-            if (!response.ok) throw new Error(`HTTP network fault error index value: ${response.status}`);
+            if (!response.ok) throw new Error(`Network collection fail code block: ${response.status}`);
             const result = await response.json();
 
             if (!result.inspections || result.inspections.length === 0) {
-                showStatus("No data logs exist matching this timeline parameters block to download.", true);
+                showStatus("No data inspection columns exist matching this period boundary to compile download file.", true);
                 return;
             }
 
-            // Parse text arrays directly into a file download trigger attachment structure injection pipeline
             const blob = new Blob([JSON.stringify(result.inspections, null, 2)], { type: "application/json" });
             const downloadUrl = URL.createObjectURL(blob);
             const hiddenAnchor = document.createElement("a");
@@ -286,49 +486,47 @@
             document.body.removeChild(hiddenAnchor);
             URL.revokeObjectURL(downloadUrl);
             
-            showStatus("Export file compiled successfully!");
+            showStatus("Data ledger document backup downloaded locally successfully!");
 
         } catch (err) {
-            showStatus(`Export processing pipe crash exception block details: ${err.message}`, true);
+            showStatus(`Export Error Pipeline Failure: ${err.message}`, true);
         }
     });
 
     // ==========================================
-    // 🖨️ UI RENDER COMPONENT HANDLER
+    // 🖨️ UI DYNAMIC GRID RENDER GENERATOR 
     // ==========================================
     function renderTableData(inspectionsList) {
-        const tableElement = document.getElementById("recordsTable");
+        const tableContainer = document.getElementById("tableContainer");
         const emptyMsgElement = document.getElementById("emptyMessage");
         const headerRow = document.getElementById("tableHeaders");
         const tbodyElement = document.getElementById("tableBody");
 
-        // Flush elements
         headerRow.innerHTML = "";
         tbodyElement.innerHTML = "";
 
         if (!inspectionsList || inspectionsList.length === 0) {
-            tableElement.style.display = "none";
+            tableContainer.style.display = "none";
             emptyMsgElement.style.display = "block";
-            emptyMsgElement.innerText = "No data inspection records found tracking back to this month parameter selection constraint.";
+            emptyMsgElement.innerText = "No data inspection records found tracking back to this month parameter matching configuration.";
             return;
         }
 
-        // Isolate global map tracking labels using unique keys from index 0 mapping layout configurations properties
+        // Dynamically maps any structural layout based on what headers keys exist inside your logged files directly
         const comprehensiveHeaderKeys = Object.keys(inspectionsList[0]);
 
-        // Build Table headers
+        // Append header cells labels dynamically
         comprehensiveHeaderKeys.forEach(key => {
             const th = document.createElement("th");
             th.innerText = key;
             headerRow.appendChild(th);
         });
 
-        // Loop rows
+        // Loop dataset matrices records rows
         inspectionsList.forEach(rowItem => {
             const tr = document.createElement("tr");
             comprehensiveHeaderKeys.forEach(key => {
                 const td = document.createElement("td");
-                // Fallback handling string or object structures inside cells cleanly
                 const val = rowItem[key];
                 td.innerText = (typeof val === "object" && val !== null) ? JSON.stringify(val) : (val !== undefined ? val : "");
                 tr.appendChild(td);
@@ -337,7 +535,7 @@
         });
 
         emptyMsgElement.style.display = "none";
-        tableElement.style.display = "table";
+        tableContainer.style.display = "block";
     }
 </script>
 
