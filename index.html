@@ -55,18 +55,17 @@
         .instruction-steps ol { margin-left: 20px; line-height: 1.8; color: #334155; }
         .instruction-steps li { margin-bottom: 8px; }
         .instruction-steps strong { color: #1e40af; }
-        .instruction-steps .print-icon { font-size: 18px; }
         .role-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-left: 10px; }
         .role-officer { background: #dbeafe; color: #1e40af; }
         .role-admin { background: #fef3c7; color: #92400e; }
         .permission-info { background: #f1f5f9; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
         .export-options { background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
         .export-options h4 { margin-bottom: 15px; color: #1e293b; font-size: 16px; }
-        .divider { height: 1px; background: #e2e8f0; margin: 20px 0; }
-        .change-log { background: #1e1e2e; color: #cdd6f4; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 11px; max-height: 150px; overflow-y: auto; margin-top: 15px; display: none; }
+        .change-log { background: #1e1e2e; color: #cdd6f4; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 11px; max-height: 300px; overflow-y: auto; margin-top: 15px; display: none; }
         .change-log.show { display: block; }
-        .change-log-title { cursor: pointer; user-select: none; font-size: 12px; color: #4b5563; margin-top: 10px; display: inline-block; }
-        .change-log-title:hover { color: #2563eb; }
+        .change-log-title { cursor: pointer; user-select: none; font-size: 13px; color: #4b5563; margin-top: 15px; display: inline-block; padding: 6px 12px; background: #f1f5f9; border-radius: 20px; }
+        .change-log-title:hover { background: #e2e8f0; color: #2563eb; }
+        .log-badge { background: #ef4444; color: white; border-radius: 10px; padding: 2px 8px; font-size: 10px; margin-left: 8px; }
     </style>
 </head>
 <body>
@@ -170,12 +169,14 @@
             </div>
         </div>
 
-        <!-- Change Log Section -->
+        <!-- Change Log Section - R2 Stored -->
         <div>
-            <div class="change-log-title" onclick="toggleChangeLog()">📋 ▼ View Change Log (Record of who altered data)</div>
+            <div class="change-log-title" onclick="toggleChangeLog()">
+                📋 View Change Log <span id="logCount" class="log-badge">0</span>
+            </div>
             <div id="changeLog" class="change-log">
-                <strong>📝 Record Modification History</strong><br>
-                <div id="changeLogContent">No changes recorded yet.</div>
+                <strong>📝 Record Modification History (Stored on Server - Visible to All Users)</strong><br>
+                <div id="changeLogContent">Loading logs...</div>
             </div>
         </div>
 
@@ -214,77 +215,10 @@
     let currentRecords = [];
     let currentHeaders = [];
     let isAdmin = false;
-    let changeLogs = [];
-
-    // Load change logs from localStorage
-    function loadChangeLogs() {
-        const saved = localStorage.getItem(`changeLog_${userStation}`);
-        if (saved) {
-            changeLogs = JSON.parse(saved);
-            updateChangeLogDisplay();
-        }
-    }
-
-    // Save change log to localStorage
-    function saveChangeLog(entry) {
-        changeLogs.unshift(entry); // Add to beginning (newest first)
-        // Keep only last 100 entries
-        if (changeLogs.length > 100) changeLogs.pop();
-        localStorage.setItem(`changeLog_${userStation}`, JSON.stringify(changeLogs));
-        updateChangeLogDisplay();
-    }
-
-    // Add a change log entry
-    function addChangeLog(record, changedFields, oldValues, newValues) {
-        const entry = {
-            timestamp: new Date().toISOString(),
-            date: new Date().toLocaleString(),
-            user: userPost,
-            station: userStation,
-            recordDate: record.Date || record["Inspection Date"] || 'Unknown',
-            inspectedBy: record["Inspected By"] || 'Unknown',
-            changes: changedFields.map(field => ({
-                field: field,
-                oldValue: oldValues[field],
-                newValue: newValues[field]
-            }))
-        };
-        saveChangeLog(entry);
-    }
-
-    // Update the change log display
-    function updateChangeLogDisplay() {
-        const container = document.getElementById('changeLogContent');
-        if (!container) return;
-        
-        if (changeLogs.length === 0) {
-            container.innerHTML = 'No changes recorded yet.';
-            return;
-        }
-        
-        let html = '';
-        for (const log of changeLogs.slice(0, 50)) {
-            html += `
-                <div style="border-bottom: 1px solid #334155; padding: 8px 0; margin-bottom: 6px;">
-                    <div><strong>${log.timestamp}</strong> | User: <span style="color:#89b4fa;">${log.user}</span> | Station: ${log.station}</div>
-                    <div>Record Date: ${log.recordDate} | Inspector: ${log.inspectedBy}</div>
-                    <div style="font-size: 10px; color: #a6adc8;">
-                        Changes: ${log.changes.map(c => `${c.field}: "${c.oldValue}" → "${c.newValue}"`).join(', ')}
-                    </div>
-                </div>
-            `;
-        }
-        container.innerHTML = html;
-    }
-
-    window.toggleChangeLog = function() {
-        const logDiv = document.getElementById('changeLog');
-        logDiv.classList.toggle('show');
-    };
 
     if (sessionToken && userStation && userPost) {
         showWorkspace();
-        loadChangeLogs();
+        loadChangeLogsFromR2();
     }
 
     window.populatePostDropdown = function() {
@@ -317,6 +251,90 @@
         }, 4000);
     }
 
+    // ==========================================
+    // R2-BASED CHANGE LOG FUNCTIONS
+    // ==========================================
+    
+    async function saveChangeLogToR2(entry) {
+        try {
+            const response = await fetch(`${WORKER_URL}/api/log-change`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ stationId: userStation, logEntry: entry })
+            });
+            const result = await response.json();
+            if (result.success) {
+                console.log('Change log saved to R2');
+                // Refresh the log display
+                loadChangeLogsFromR2();
+            } else {
+                console.error('Failed to save log to R2:', result.error);
+            }
+        } catch (err) {
+            console.error('Error saving log to R2:', err);
+        }
+    }
+
+    async function loadChangeLogsFromR2() {
+        if (!userStation) return;
+        
+        try {
+            const response = await fetch(`${WORKER_URL}/api/get-logs?station=${userStation.toLowerCase()}`);
+            const data = await response.json();
+            
+            const container = document.getElementById('changeLogContent');
+            const logCountSpan = document.getElementById('logCount');
+            
+            if (data.success && data.logs && data.logs.length > 0) {
+                logCountSpan.textContent = data.logs.length;
+                let html = '';
+                for (const log of data.logs.slice(0, 100)) {
+                    html += `
+                        <div style="border-bottom: 1px solid #334155; padding: 10px 0; margin-bottom: 8px;">
+                            <div><strong>🕐 ${log.timestamp}</strong> | 👤 User: <span style="color:#89b4fa;">${log.user}</span> | 📍 Station: ${log.station}</div>
+                            <div>📅 Record Date: ${log.recordDate} | ✍️ Inspector: ${log.inspectedBy}</div>
+                            <div style="font-size: 10px; color: #a6adc8; margin-top: 5px;">
+                                📝 Changes: ${log.changes.map(c => `<span style="color:#f9e2af;">${c.field}</span>: "<span style="color:#f38ba8;">${c.oldValue || '(empty)'}</span>" → "<span style="color:#a6e3a1;">${c.newValue || '(empty)'}</span>"`).join(', ')}
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            } else {
+                logCountSpan.textContent = '0';
+                container.innerHTML = 'No changes recorded yet. When users edit records, changes will appear here.';
+            }
+        } catch (err) {
+            console.error('Error loading logs from R2:', err);
+            document.getElementById('changeLogContent').innerHTML = 'Error loading logs. Please refresh the page.';
+        }
+    }
+
+    function addChangeLog(record, changedFields, oldValues, newValues) {
+        const entry = {
+            timestamp: new Date().toLocaleString(),
+            timestampISO: new Date().toISOString(),
+            user: userPost,
+            station: userStation,
+            recordDate: record.Date || record["Inspection Date"] || 'Unknown',
+            inspectedBy: record["Inspected By"] || 'Unknown',
+            changes: changedFields.map(field => ({
+                field: field,
+                oldValue: String(oldValues[field] || ''),
+                newValue: String(newValues[field] || '')
+            }))
+        };
+        saveChangeLogToR2(entry);
+    }
+
+    window.toggleChangeLog = function() {
+        const logDiv = document.getElementById('changeLog');
+        logDiv.classList.toggle('show');
+        if (logDiv.classList.contains('show')) {
+            loadChangeLogsFromR2();
+        }
+    };
+
     document.getElementById('loginBtn').addEventListener('click', async () => {
         const stationId = document.getElementById('loginStation').value;
         const post = document.getElementById('loginPost').value;
@@ -344,7 +362,7 @@
                 userPost = post;
                 loginStatus.style.display = 'none';
                 showWorkspace();
-                loadChangeLogs();
+                loadChangeLogsFromR2();
             } else {
                 throw new Error(result.error || 'Authentication failed');
             }
@@ -582,6 +600,7 @@
             const result = await response.json();
             if (result.success) {
                 currentRecords[rowIndex] = record;
+                // Save to R2 change log
                 addChangeLog(record, changedFields, oldValues, newValues);
                 showStatus(`✅ Record saved! Changed: ${changedFields.join(', ')}`, 'success');
                 buildGrid(currentRecords);
@@ -598,9 +617,9 @@
         }
     };
 
-    async function handleDownloadExcel(recordsToExport, filenameSuffix = '') {
+    async function handleDownloadExcel(recordsToExport) {
         if (!recordsToExport || recordsToExport.length === 0) {
-            showStatus('No records to export.', 'warning');
+            showStatus('No records to export. Click "Show Records" first.', 'warning');
             return;
         }
         
@@ -670,7 +689,6 @@
         try {
             const allRecords = await fetchAllRecords(userStation);
             
-            // Convert DD/MM/YYYY to Date object for comparison
             function parseDate(dateStr) {
                 if (dateStr.includes('/')) {
                     const [day, month, year] = dateStr.split('/');
@@ -695,7 +713,6 @@
                 return;
             }
             
-            // Export with range filename
             const fieldSet = new Set();
             filteredRecords.forEach(record => {
                 Object.keys(record).forEach(key => {
