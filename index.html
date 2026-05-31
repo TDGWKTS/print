@@ -473,49 +473,52 @@
     };
 
     async function handleDownloadExcel() {
-        if (currentRecords.length === 0) {
-            showStatus('No records to export. Click "Show Records" first.', 'warning');
-            return;
-        }
-        
-        const downloadBtn = document.getElementById('downloadDataBtn');
-        downloadBtn.disabled = true;
-        downloadBtn.innerHTML = '<span class="loading-spinner"></span> Generating...';
-        
-        try {
-            const headers = currentHeaders;
-            const worksheetData = [headers];
-            
-            for (const record of currentRecords) {
-                const row = headers.map(h => record[h] !== undefined ? record[h] : '');
-                worksheetData.push(row);
-            }
-            
-            const workbook = XLSX.utils.book_new();
-            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-            worksheet['!cols'] = headers.map(() => ({ wch: 18 }));
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Records');
-            
-            const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
-            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            const dateStr = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-            a.download = `${userStation.toLowerCase()}_records_${dateStr}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            showStatus(`✅ Exported ${currentRecords.length} record(s)`, 'success');
-        } catch (err) {
-            showStatus(`Export failed: ${err.message}`, 'error');
-        } finally {
-            downloadBtn.disabled = false;
-            downloadBtn.innerHTML = '📥 Download Excel';
-        }
+    if (currentRecords.length === 0) {
+        showStatus('No records to export. Click "Show Records" first.', 'warning');
+        return;
     }
+    
+    const downloadBtn = document.getElementById('downloadDataBtn');
+    downloadBtn.disabled = true;
+    downloadBtn.innerHTML = '<span class="loading-spinner"></span> Generating...';
+    
+    try {
+        const headers = currentHeaders;
+        const worksheetData = [headers];
+        
+        for (const record of currentRecords) {
+            const row = headers.map(h => record[h] !== undefined ? record[h] : '');
+            worksheetData.push(row);
+        }
+        
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+        worksheet['!cols'] = headers.map(() => ({ wch: 18 }));
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Inspection_Records');
+        
+        const excelBuffer = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
+        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        // 👇 NEW FILENAME FORMAT 👇
+        const selectedDate = document.getElementById('dateSelect').value;
+        a.download = `${userStation.toLowerCase()}_${selectedDate}_inspection_data.xlsx`;
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showStatus(`✅ Exported ${currentRecords.length} record(s)`, 'success');
+    } catch (err) {
+        showStatus(`Export failed: ${err.message}`, 'error');
+    } finally {
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = '📥 Download Excel';
+    }
+}
 
     async function downloadTemplate() {
         const btn = document.getElementById('downloadTemplateBtn');
